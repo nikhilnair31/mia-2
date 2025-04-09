@@ -4,12 +4,10 @@ from pydub import AudioSegment
 from pydub.effects import normalize
 from pydub.silence import split_on_silence
 
-def read_audio_file(file_path):
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
-    
-    with open(file_path, 'rb') as file:
-        return file.read()
+AUDIO_FILE_PATH = r"data\recording_04042024151458.mp3"
+
+def read_audio_file():
+    return AUDIO_FILE_PATH
     
 def normalize_audio(file_path, output_path=None, headroom=0.1):
    if output_path is None:
