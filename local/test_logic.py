@@ -10,13 +10,8 @@ Summarize the conversation in a single sentence and classify it as one of the fo
 """
 
 def analyze_transcript(transcript):
-    """
-    Main function to analyze transcript and return simplified results
-    """
-    # Extract basic information
     audio_length_seconds = get_audio_length_from_transcript(transcript)
     
-    # Skip processing for very short recordings
     if audio_length_seconds < 10:
         return {
             "status": "ignored",
@@ -24,16 +19,13 @@ def analyze_transcript(transcript):
             "length_seconds": audio_length_seconds
         }
     
-    # Get basic speaker information - just count and words
     speaker_info = get_basic_speaker_info(transcript)
     
-    # Get basic classification using LLM
     if speaker_info["unique_speakers"] > 0:
         classification = get_simple_classification(transcript, speaker_info)
     else:
         classification = "Unknown (no clear speakers detected)"
     
-    # Return simplified analysis object
     output = {
         "status": "processed",
         "length_seconds": audio_length_seconds,
@@ -45,7 +37,6 @@ def analyze_transcript(transcript):
     return output
 
 def get_audio_length_from_transcript(transcript):
-    """Extract audio length from the last timestamp in transcript"""
     timestamp_pattern = r'\[(\d{2}):(\d{2}):(\d{2})\]'
     matches = re.findall(timestamp_pattern, transcript)
     
@@ -60,8 +51,6 @@ def get_audio_length_from_transcript(transcript):
     return output
 
 def get_basic_speaker_info(transcript):
-    """Get basic speaker information without detailed analysis"""
-    # Extract speaker turns from transcript
     speaker_pattern = r'(Speaker \w+|Unknown):\s*'
     speakers = set(re.findall(speaker_pattern, transcript))
     
@@ -74,8 +63,6 @@ def get_basic_speaker_info(transcript):
     return output
 
 def get_simple_classification(transcript, speaker_info):
-    """Get a simple classification of the conversation using LLM"""
-    # Prepare a concise prompt
     prompt = f"""
     Conversation with {speaker_info["unique_speakers"]} speakers.
     
@@ -88,11 +75,9 @@ def get_simple_classification(transcript, speaker_info):
     Classify this conversation type and provide a one-sentence summary.
     """
     
-    # Call LLM API with simplified prompt
     response = call_llm_api(sysprompt, prompt)
     print(f"LLM response: {response}")
     
-    # Extract just the classification and summary
     if isinstance(response, dict) and "text" in response:
         return response["text"]
     elif hasattr(response, "json"):
