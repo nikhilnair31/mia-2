@@ -1,6 +1,10 @@
 import re
 from test_llm import call_llm_api
 
+sysprompt = """
+Summarize the entire conversation into a single short sentence.
+"""
+
 def analyze_transcript(transcript):
    audio_length_seconds = get_audio_length_from_transcript(transcript)
    
@@ -151,25 +155,19 @@ def determine_conversation_type(transcript, speaker_analysis):
         is_balanced_conversation = alternating_pattern
     
     # Query LLM to classify the transcript
-    prompt = f"""
-    Analyze this transcript and determine if it's:
-    1. A natural conversation between people
-    2. Someone talking to themselves (self-talk)
-    3. Media content (movie/TV/podcast)
-    
+    user_prompt = f"""
     Key metrics:
     - Number of speakers: {turn_taking["unique_speakers"]}
     - Total speaker turns: {turn_taking["total_turns"]}
     - Is monologue: {is_monologue}
     - Is balanced conversation: {is_balanced_conversation}
     
-    Transcript excerpt (first 300 chars): {transcript[:300]}...
+    Transcript: {transcript}
     
     Provide your classification with reasoning.
     """
     
-    data = {"text": prompt}
-    response = call_llm_api(data)
+    response = call_llm_api(sysprompt, user_prompt)
     response.raise_for_status()
     llm_analysis = response.json()["analysis"]
     

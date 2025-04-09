@@ -14,17 +14,12 @@ MODEL_ID = "gemini-2.0-flash"
 LLM_API_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:generateContent?key={GEMINI_API_KEY}"
 
 # Functions
-def call_llm_api(sysprompt, userprompt, stream=False):
+def call_llm_api(sysprompt, userprompt):
     print(f"\nLLM...")
 
     headers = {
         "Content-Type": "application/json"
     }
-    
-    if stream:
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:streamGenerateContent?key={GEMINI_API_KEY}"
-    else:
-        endpoint = LLM_API_ENDPOINT
     
     data = {
         "contents": [
@@ -45,5 +40,5 @@ def call_llm_api(sysprompt, userprompt, stream=False):
         }
     }
 
-    response = requests.post(endpoint, headers=headers, json=data)
+    response = requests.post(LLM_API_ENDPOINT, headers=headers, json=data)
     return response.json()

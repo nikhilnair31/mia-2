@@ -32,11 +32,10 @@ def call_transcription_api(temp_file_path):
         }
         
         response = requests.post(STT_API_ENDPOINT, headers=headers, files=files, data=data)
-        print(f"Response status code: {response}")
     
     transcription_result = response.json()
     # print(f"transcription_result: {transcription_result}")
     full_text = transcription_result.get('text', '')
-    print(f"full_text: {full_text}")
+    # print(f"full_text: {full_text}")
 
     return full_text

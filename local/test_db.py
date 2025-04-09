@@ -18,7 +18,7 @@ def initialize_db():
     return conn
 
 def save_to_database(audio_file_path, transcript, analysis, conn=None):
-    print(f"Saving...")
+    print(f"\nSaving...")
 
     should_close = False
     if conn is None:
@@ -35,4 +35,4 @@ def save_to_database(audio_file_path, transcript, analysis, conn=None):
     if should_close:
         conn.close()
     
-    print(f"Saved!")
+    print(f"\nSaved!")
