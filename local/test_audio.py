@@ -7,6 +7,8 @@ from pydub.silence import split_on_silence
 AUDIO_FILE_PATH = r"data\recording_04042024151458.mp3"
 
 def read_audio_file():
+    print(f"\nReading...")
+
     return AUDIO_FILE_PATH
     
 def normalize_audio(file_path, output_path=None, headroom=0.1):

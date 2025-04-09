@@ -15,7 +15,7 @@ LLM_API_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{MO
 
 # Functions
 def call_llm_api(sysprompt, userprompt, stream=False):
-    print(f"LLM...")
+    print(f"\nLLM...")
 
     headers = {
         "Content-Type": "application/json"
