@@ -35,7 +35,5 @@ def call_transcription_api(temp_file_path):
     
     transcription_result = response.json()
     # print(f"transcription_result: {transcription_result}")
-    full_text = transcription_result.get('text', '')
-    # print(f"full_text: {full_text}")
 
-    return full_text
+    return transcription_result
