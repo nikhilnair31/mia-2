@@ -3,6 +3,12 @@ import re
 from pydub import AudioSegment
 from test_llm import call_llm_api
 
+FFMPEG_PATH = "/opt/ffmpeg/bin/ffmpeg"
+FFPROBE_PATH = "/opt/ffmpeg/bin/ffprobe"
+os.environ["PATH"] = f"/opt/ffmpeg/bin:{os.environ.get('PATH', '')}"
+AudioSegment.converter = FFMPEG_PATH
+AudioSegment.ffprobe = FFPROBE_PATH
+
 sysprompt = """
 Summarize the conversation in a single sentence and classify it as one of the following:
 - Monologue: One person speaking with minimal interaction

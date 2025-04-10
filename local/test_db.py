@@ -8,7 +8,7 @@ download_path = "/tmp/input.mp3"
 
 def initialize_db(s3, db_filepath):
     if os.path.exists(db_filepath):
-        s3.download_file(s3_bucket, s3_object, download_path)
+        s3.download_file(s3_bucket, s3_object, db_filepath)
     
     conn = sqlite3.connect(download_path)
     cursor = conn.cursor()

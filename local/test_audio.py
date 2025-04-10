@@ -4,6 +4,12 @@ from pydub import AudioSegment
 from pydub.effects import normalize
 from pydub.silence import split_on_silence
 
+FFMPEG_PATH = "/opt/ffmpeg/bin/ffmpeg"
+FFPROBE_PATH = "/opt/ffmpeg/bin/ffprobe"
+os.environ["PATH"] = f"/opt/ffmpeg/bin:{os.environ.get('PATH', '')}"
+AudioSegment.converter = FFMPEG_PATH
+AudioSegment.ffprobe = FFPROBE_PATH
+
 def normalize_audio(file_path, output_path=None, headroom=0.1):
    if output_path is None:
        base_path = os.path.splitext(file_path)[0]
