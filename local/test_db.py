@@ -1,10 +1,16 @@
+import os
 import json
 import sqlite3
 
-DATABASE_FILE_NAME = r"data/transcripts.db"
+s3_bucket = "mia-2"
+s3_object = "users/user_test/data/recording_04042024151458.mp3"
+download_path = "/tmp/input.mp3"
 
-def initialize_db():
-    conn = sqlite3.connect(DATABASE_FILE_NAME)
+def initialize_db(s3, db_filepath):
+    if os.path.exists(db_filepath):
+        s3.download_file(s3_bucket, s3_object, download_path)
+    
+    conn = sqlite3.connect(download_path)
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -18,7 +24,7 @@ def initialize_db():
 
     return conn
 
-def save_to_database(conn, audio_filepath, transcript, analysis):
+def save_to_database(conn, db_filepath, audio_filepath, transcript, analysis):
     print(f"\nSaving...")
     # print(f"audio_filepath: {audio_filepath}")
     # print(f"transcript: {transcript}")
@@ -29,7 +35,7 @@ def save_to_database(conn, audio_filepath, transcript, analysis):
 
     should_close = False
     if conn is None:
-        conn = sqlite3.connect(DATABASE_FILE_NAME)
+        conn = sqlite3.connect(db_filepath)
         should_close = True
     
     cursor = conn.cursor()
