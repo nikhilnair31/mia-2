@@ -20,9 +20,9 @@ def initialize_db():
 
 def save_to_database(conn, audio_filepath, transcript, analysis):
     print(f"\nSaving...")
-    print(f"audio_filepath: {audio_filepath}")
-    print(f"transcript: {transcript}")
-    print(f"analysis: {analysis}")
+    # print(f"audio_filepath: {audio_filepath}")
+    # print(f"transcript: {transcript}")
+    # print(f"analysis: {analysis}")
     
     transcript_json = json.dumps(transcript)
     analysis_json = json.dumps(analysis)
@@ -35,7 +35,7 @@ def save_to_database(conn, audio_filepath, transcript, analysis):
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO transcriptions (file_path, transcript, analysis) VALUES (?, ?, ?)",
-        (audio_filepath, transcript_json, transcript_json)
+        (audio_filepath, transcript_json, analysis_json)
     )
     conn.commit()
     

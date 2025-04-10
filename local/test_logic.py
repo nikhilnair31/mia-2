@@ -27,7 +27,7 @@ def analyze_transcript(filepath, transcript):
         "length_seconds": audio_len_sec,
         "classification": classification
     }
-    print(f"Analysis result: {output}")
+    # print(f"Analysis result: {output}")
     
     return output
  
@@ -37,7 +37,7 @@ def len_audio(file_path):
     
     try:
         len = AudioSegment.from_file(file_path).duration_seconds
-        print(f"Audio length: {len} seconds")
+        # print(f"Audio length: {len} seconds")
         return len
     except FileNotFoundError:
         print("Error: FFmpeg not found. Please install FFmpeg and add it to your PATH.")
@@ -66,7 +66,7 @@ def get_simple_classification(transcript):
     """
     
     response = call_llm_api(sysprompt, prompt)
-    print(f"LLM response: {response}")
+    # print(f"LLM response: {response}")
     
     if isinstance(response, dict) and "text" in response:
         return response["text"]
