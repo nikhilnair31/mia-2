@@ -1,5 +1,5 @@
-
 import os
+import argparse
 from pydub import AudioSegment
 from pydub.effects import normalize, compress_dynamic_range
 from pydub.silence import split_on_silence, detect_silence
@@ -72,37 +72,39 @@ def preprocess_ambient_audio(file_path, output_path=None,
     
     return output_path
 
-def normalize_audio(file_path, output_path=None, headroom=0.1):
-   if output_path is None:
-       base_path = os.path.splitext(file_path)[0]
-       output_path = f"{base_path}_normalized.mp3"
-   
-   audio = AudioSegment.from_file(file_path)
-   normalized_audio = normalize(audio, headroom=headroom)
-   normalized_audio.export(output_path, format="mp3")
-   
-   return output_path
+def main():
+    parser = argparse.ArgumentParser(description="Preprocess ambient audio from phone microphone")
+    parser.add_argument("input_file", help="Path to input audio file")
+    parser.add_argument("-o", "--output", help="Path for output file (default: [input_file]_processed.mp3)")
+    parser.add_argument("--no-normalize", action="store_false", dest="normalize", help="Skip audio normalization")
+    parser.add_argument("--headroom", type=float, default=0.3, help="Normalization headroom (0-1)")
+    parser.add_argument("--no-compress", action="store_false", dest="compress", help="Skip dynamic range compression")
+    parser.add_argument("--threshold", type=float, default=-20, help="Compression threshold in dB")
+    parser.add_argument("--ratio", type=float, default=4.0, help="Compression ratio")
+    parser.add_argument("--attack", type=int, default=5, help="Compression attack time in ms")
+    parser.add_argument("--release", type=int, default=50, help="Compression release time in ms")
+    parser.add_argument("--no-silence-removal", action="store_false", dest="remove_silence", help="Skip silence removal")
+    parser.add_argument("--min-silence", type=int, default=500, help="Minimum length of silence to remove (ms)")
+    parser.add_argument("--silence-threshold", type=int, default=-40, help="Silence threshold in dB")
+    parser.add_argument("--keep-silence", type=int, default=300, help="Amount of silence to keep around non-silent sections (ms)")
+    
+    args = parser.parse_args()
+    
+    preprocess_ambient_audio(
+        args.input_file, 
+        args.output,
+        normalize_audio=args.normalize,
+        headroom=args.headroom,
+        compress_audio=args.compress,
+        threshold=args.threshold,
+        ratio=args.ratio,
+        attack=args.attack,
+        release=args.release,
+        remove_silence=args.remove_silence,
+        min_silence_len=args.min_silence,
+        silence_thresh=args.silence_threshold,
+        keep_silence=args.keep_silence
+    )
 
-def trim_silence(file_path, output_path=None, min_silence_len=500, silence_thresh=-40, keep_silence=100):
-   if output_path is None:
-       base_path = os.path.splitext(file_path)[0]
-       output_path = f"{base_path}_trimmed.mp3"
-   
-   audio = AudioSegment.from_file(file_path)
-   
-   chunks = split_on_silence(
-       audio,
-       min_silence_len=min_silence_len,
-       silence_thresh=silence_thresh,
-       keep_silence=keep_silence
-   )
-   
-   if not chunks:
-       return file_path
-   
-   processed_audio = chunks[0]
-   for chunk in chunks[1:]:
-       processed_audio += chunk
-   
-   processed_audio.export(output_path, format="mp3")
-   return output_path
+if __name__ == "__main__":
+    main()

@@ -2,51 +2,17 @@ import os
 import json
 import boto3
 import logging
-from test_db import initialize_db, save_to_database
+import traceback
 from test_logic import analyze_transcript
 from test_stt import call_transcription_api
+from test_audio import preprocess_ambient_audio
+from test_db import initialize_db, save_to_database
+from test_file import check_s3_object_exists, get_s3_file_metadata, file_download, file_upload
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 s3 = boto3.client('s3')
-
-def check_s3_object_exists(bucket_name, object_key):
-    try:
-        s3.head_object(Bucket=bucket_name, Key=object_key)
-        print(f"Object exists: {bucket_name}/{object_key}")
-        return True
-    except Exception as e:
-        print(f"Object does not exist or error: {bucket_name}/{object_key} - {e}")
-        return False
-
-def file_download(bucket_name, object_key, local_filepath):
-    print(f"Downloading from Bucket: {bucket_name}, Key: {object_key}")
-    print(f"Saving to: {local_filepath}")
-    
-    try:
-        os.makedirs(os.path.dirname(local_filepath), exist_ok=True)
-        
-        s3.download_file(bucket_name, object_key, local_filepath)
-        print(f"Download successful!")
-        return True
-    except Exception as e:
-        print(f"Download error: {e}")
-        return False
-def file_upload(bucket_name, object_key, local_filepath):
-    print(f"Uploading from {local_filepath} to Bucket: {bucket_name}, Key: {object_key}")
-    
-    try:
-        if os.path.exists(local_filepath):
-            s3.upload_file(local_filepath, bucket_name, object_key)
-            print(f"Uploaded database to S3: {bucket_name}/transcriptions.db")
-        
-        s3.download_file(bucket_name, object_key, local_filepath)
-        print(f"Upload successful!")
-        return True
-    except Exception as e:
-        print(f"Upload error: {e}")
-        return False
 
 def get_s3_details(event):
     try:
@@ -97,20 +63,27 @@ def lambda_handler(event, context):
         audio_temp_filepath = f"/tmp/temp_audio_file.mp3"
         db_temp_filepath = f"/tmp/transcriptions.db"
         
-        # Get bucket details
+        # Get bucket details and audio file metadata
         bucket_name, audio_object_key = get_s3_details(event)
+        audio_metadata = get_s3_file_metadata(s3, bucket_name, audio_object_key)
+        print(f"Audio Metadata: {audio_metadata}")
         
         # Download audio file from S3
-        audio_download_success = file_download(bucket_name, audio_object_key, audio_temp_filepath)
+        audio_download_success = file_download(s3, bucket_name, audio_object_key, audio_temp_filepath)
         if not audio_download_success:
             raise Exception(f"Failed to download audio file from S3: {bucket_name}/{audio_object_key}")
+
+        # Check by metadata if can be processed
+        processed_audio_temp_filepath = audio_temp_filepath
+        if audio_metadata.get('preprocessaudiofile') == 'true':
+            processed_audio_temp_filepath = preprocess_ambient_audio(audio_temp_filepath)
         
         # Download db file from S3
         user_name = audio_object_key.split('/')[0] if '/' in audio_object_key else ''
         db_object_key = f'{user_name}/data/{db_name}'
-        db_exists = check_s3_object_exists(bucket_name, db_object_key)
+        db_exists = check_s3_object_exists(s3, bucket_name, db_object_key)
         if db_exists:
-            db_download_success = file_download(bucket_name, db_object_key, db_temp_filepath)
+            db_download_success = file_download(s3, bucket_name, db_object_key, db_temp_filepath)
             if not db_download_success:
                 raise Exception(f"Failed to download database file from S3: {bucket_name}/{db_object_key}")
         else:
@@ -119,12 +92,18 @@ def lambda_handler(event, context):
                 raise Exception(f"Failed to initialize new database at {db_temp_filepath}")
         
         # Process audio
-        start_process(audio_object_key, audio_temp_filepath, db_temp_filepath)
+        start_process(audio_object_key, processed_audio_temp_filepath, db_temp_filepath)
         
         # Upload db to S3
-        db_upload_success = file_upload(bucket_name, db_object_key, db_temp_filepath)
+        db_upload_success = file_upload(s3, bucket_name, db_object_key, db_temp_filepath)
         if not db_upload_success:
             raise Exception(f"Failed to upload database file from S3: {bucket_name}/{db_object_key}")
+        
+        # Delete audio in s3
+        if audio_metadata.get('saveaudiofile') == 'false':
+            audio_delete_success = s3.delete_object(Bucket=bucket_name, Key=audio_object_key)
+            if not audio_delete_success:
+                raise Exception(f"Failed to delete audio file from S3: {bucket_name}/{audio_object_key}")
         
         return {
             "statusCode": 200, 
@@ -132,8 +111,9 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
-        print(f"Error in lambda_handler: {str(e)}")
+        error_traceback = traceback.format_exc()
+        print(f"Error in lambda_handler: {str(e)}\nStacktrace:\n{error_traceback}")
         return {
             "statusCode": 500,
-            "body": f"Error: {str(e)}"
+            "body": f"Error: {str(e)}\nStacktrace:\n{error_traceback}"
         }
