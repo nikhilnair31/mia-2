@@ -1,4 +1,5 @@
 import os
+import json
 import boto3
 import logging
 from test_db import initialize_db, save_to_database
@@ -9,6 +10,15 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 s3 = boto3.client('s3')
+
+def check_s3_object_exists(bucket_name, object_key):
+    try:
+        s3.head_object(Bucket=bucket_name, Key=object_key)
+        print(f"Object exists: {bucket_name}/{object_key}")
+        return True
+    except Exception as e:
+        print(f"Object does not exist or error: {bucket_name}/{object_key} - {e}")
+        return False
 
 def file_download(bucket_name, object_key, local_filepath):
     print(f"Downloading from Bucket: {bucket_name}, Key: {object_key}")
@@ -53,20 +63,26 @@ def get_s3_details(event):
         print(f"Error extracting S3 details: {e}")
         raise
 
-def start_process(audio_filepath, db_filepath):
+def start_process(audio_objectkey, audio_filepath, db_filepath):
     print(f"Starting process with audio: {audio_filepath} and DB: {db_filepath}")
     
     db_success = initialize_db(db_filepath)
     if not db_success:
         raise Exception(f"Failed to initialize database at {db_filepath}")
     
-    transcript_text = call_transcription_api(audio_filepath)
-    if not transcript_text:
+    transcript_json = call_transcription_api(audio_filepath)
+    if not transcript_json:
         raise Exception("Transcription failed")
     
-    analysis = analyze_transcript(audio_filepath, transcript_text)
+    analysis_json = analyze_transcript(audio_filepath, transcript_json)
+    if not analysis_json:
+        raise Exception("Analysis failed")
     
-    save_success = save_to_database(db_filepath, audio_filepath, transcript_text, analysis)
+    transcript_data = json.dumps(transcript_json)
+    transcript_text = transcript_json.get("text", "")
+    analysis_data = json.dumps(analysis_json)
+    
+    save_success = save_to_database(db_filepath, audio_objectkey, transcript_data, transcript_text, analysis_data)
     if not save_success:
         raise Exception("Failed to save to database")
     
@@ -74,25 +90,38 @@ def start_process(audio_filepath, db_filepath):
     return True
 
 def lambda_handler(event, context):
-    print(f"Lambda handler started")
     print(f"Event: {event}")
     
     try:
-        db_object_key = "transcriptions.db"
+        db_name = "data.db"
         audio_temp_filepath = f"/tmp/temp_audio_file.mp3"
         db_temp_filepath = f"/tmp/transcriptions.db"
         
+        # Get bucket details
         bucket_name, audio_object_key = get_s3_details(event)
         
+        # Download audio file from S3
         audio_download_success = file_download(bucket_name, audio_object_key, audio_temp_filepath)
         if not audio_download_success:
             raise Exception(f"Failed to download audio file from S3: {bucket_name}/{audio_object_key}")
-        db_download_success = file_download(bucket_name, db_object_key, db_temp_filepath)
-        if not db_download_success:
-            raise Exception(f"Failed to download database file from S3: {bucket_name}/{db_object_key}")
         
-        start_process(audio_temp_filepath, db_temp_filepath)
+        # Download db file from S3
+        user_name = audio_object_key.split('/')[0] if '/' in audio_object_key else ''
+        db_object_key = f'{user_name}/data/{db_name}'
+        db_exists = check_s3_object_exists(bucket_name, db_object_key)
+        if db_exists:
+            db_download_success = file_download(bucket_name, db_object_key, db_temp_filepath)
+            if not db_download_success:
+                raise Exception(f"Failed to download database file from S3: {bucket_name}/{db_object_key}")
+        else:
+            db_init_success = initialize_db(db_temp_filepath)
+            if not db_init_success:
+                raise Exception(f"Failed to initialize new database at {db_temp_filepath}")
         
+        # Process audio
+        start_process(audio_object_key, audio_temp_filepath, db_temp_filepath)
+        
+        # Upload db to S3
         db_upload_success = file_upload(bucket_name, db_object_key, db_temp_filepath)
         if not db_upload_success:
             raise Exception(f"Failed to upload database file from S3: {bucket_name}/{db_object_key}")
@@ -108,8 +137,3 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": f"Error: {str(e)}"
         }
-
-if __name__ == "__main__":
-    audio_filepath = "data/recording_04042024151458.mp3"
-    db_filepath = "data/transcriptions.db"
-    start_process(audio_filepath, db_filepath)
