@@ -1,3 +1,4 @@
+import os
 import json
 import boto3
 import logging
@@ -12,7 +13,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 s3 = boto3.client('s3')
-
 def get_s3_details(event):
     try:
         record = event['Records'][0]
@@ -39,12 +39,16 @@ def start_process(audio_objectkey, audio_filepath, db_filepath):
     if not transcript_json:
         raise Exception("Transcription failed")
     
-    transcript_text = transcript_json['candidates'][0]['content']['parts'][0]['text']
+    transcript_text = transcript_json['text']
     analysis_json = analyze_transcript(audio_filepath, transcript_text)
     if not analysis_json:
         raise Exception("Analysis failed")
     
     transcript_data = json.dumps(transcript_json)
+    analysis_data = json.dumps(analysis_json)
+    
+    transcript_data = json.dumps(transcript_json)
+    transcript_text = transcript_json.get("text", "")
     analysis_data = json.dumps(analysis_json)
     
     save_success = save_to_database(db_filepath, audio_objectkey, transcript_data, transcript_text, analysis_data)
@@ -58,7 +62,6 @@ def lambda_handler(event, context):
     print(f"Event: {event}")
     
     try:
-        db_name = "data.db"
         audio_temp_filepath = f"/tmp/temp_audio_file.mp3"
         db_temp_filepath = f"/tmp/transcriptions.db"
         
@@ -78,8 +81,8 @@ def lambda_handler(event, context):
             processed_audio_temp_filepath = preprocess_ambient_audio(audio_temp_filepath)
         
         # Download db file from S3
-        user_name = audio_object_key.split('/')[0] if '/' in audio_object_key else ''
-        db_object_key = f'{user_name}/data/{db_name}'
+        user_name = audio_object_key.split('/')[1] if '/' in audio_object_key else ''
+        db_object_key = f'data/{user_name}/data/data.db'
         db_exists = check_s3_object_exists(s3, bucket_name, db_object_key)
         if db_exists:
             db_download_success = file_download(s3, bucket_name, db_object_key, db_temp_filepath)

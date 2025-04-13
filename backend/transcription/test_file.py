@@ -52,12 +52,12 @@ def file_download(s3, bucket_name, object_key, local_filepath):
         print(f"Download error: {e}")
         return False
 def file_upload(s3, bucket_name, object_key, local_filepath):
-    print(f"Uploading from {local_filepath} to Bucket: {bucket_name}, Key: {object_key}")
+    print(f"Uploading from {local_filepath} to {bucket_name}/{object_key}")
     
     try:
         if os.path.exists(local_filepath):
             s3.upload_file(local_filepath, bucket_name, object_key)
-            print(f"Uploaded database to S3: {bucket_name}/transcriptions.db")
+            print(f"Uploaded database to {bucket_name}/{object_key}")
         
         s3.download_file(bucket_name, object_key, local_filepath)
         print(f"Upload successful!")

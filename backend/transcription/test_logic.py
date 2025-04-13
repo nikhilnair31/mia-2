@@ -1,7 +1,7 @@
 import os
 import re
 from pydub import AudioSegment
-from .test_llm import call_llm_api
+from test_llm import call_llm_api
 
 # FFMPEG_PATH = "/opt/ffmpeg/bin/ffmpeg"
 # FFPROBE_PATH = "/opt/ffmpeg/bin/ffprobe"

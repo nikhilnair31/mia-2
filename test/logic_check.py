@@ -1,5 +1,5 @@
 import os
-from local.test_logic import analyze_transcript
+from transcription.test_logic import analyze_transcript
 
 # Get the absolute path to the project root directory
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

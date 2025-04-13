@@ -1,3 +1,4 @@
 # mia-2
 
-- [ ] Add LLM generated user labels and timestamp estimates
+- [ ] Think about notification system
+- [ ] Create simple daily run Lambda to build user level personas
