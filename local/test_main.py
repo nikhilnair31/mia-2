@@ -1,4 +1,3 @@
-import os
 import json
 import boto3
 import logging
@@ -40,12 +39,12 @@ def start_process(audio_objectkey, audio_filepath, db_filepath):
     if not transcript_json:
         raise Exception("Transcription failed")
     
-    analysis_json = analyze_transcript(audio_filepath, transcript_json)
+    transcript_text = transcript_json['candidates'][0]['content']['parts'][0]['text']
+    analysis_json = analyze_transcript(audio_filepath, transcript_text)
     if not analysis_json:
         raise Exception("Analysis failed")
     
     transcript_data = json.dumps(transcript_json)
-    transcript_text = transcript_json.get("text", "")
     analysis_data = json.dumps(analysis_json)
     
     save_success = save_to_database(db_filepath, audio_objectkey, transcript_data, transcript_text, analysis_data)

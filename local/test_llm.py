@@ -41,4 +41,5 @@ def call_llm_api(sysprompt, userprompt):
     }
 
     response = requests.post(LLM_API_ENDPOINT, headers=headers, json=data)
+    print(f"LLM API response: {response.json()}\n")
     return response.json()
