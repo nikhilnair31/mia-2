@@ -1,16 +1,17 @@
 import os
 import re
+import json
 from pydub import AudioSegment
-from test_llm import call_llm_api
+from llm import call_llm_api
 
-# FFMPEG_PATH = "/opt/ffmpeg/bin/ffmpeg"
-# FFPROBE_PATH = "/opt/ffmpeg/bin/ffprobe"
-# os.environ["PATH"] = f"/opt/ffmpeg/bin:{os.environ.get('PATH', '')}"
-# AudioSegment.converter = FFMPEG_PATH
-# AudioSegment.ffprobe = FFPROBE_PATH
+FFMPEG_PATH = "/opt/ffmpeg/bin/ffmpeg"
+FFPROBE_PATH = "/opt/ffmpeg/bin/ffprobe"
+os.environ["PATH"] = f"/opt/ffmpeg/bin:{os.environ.get('PATH', '')}"
+AudioSegment.converter = FFMPEG_PATH
+AudioSegment.ffprobe = FFPROBE_PATH
 
-def analyze_transcript(filepath, transcript):
-    print(f"Analyzing transcript for file: {filepath} | Transcript: {transcript[:50]}...")
+def analyze_transcript(filepath, processed_transcript):
+    print(f"Analyzing processed_transcript for file: {filepath} | Processed transcript: {processed_transcript[:50]}...")
 
     # Create default result
     result = {
@@ -27,18 +28,18 @@ def analyze_transcript(filepath, transcript):
         if audio_length < 10:
             result["status"] = "ignored"
             result["reason"] = "Audio too short (less than 10 seconds)"
-            return result
+            return json.dumps(result)
     except Exception as e:
         print(f"Error checking audio length: {str(e)}")
         # Continue with analysis even if we couldn't get audio length
         result["length_seconds"] = None
 
     # 2. Check if speaker labels exist else create using llm
-    speaker_info = get_speaker_info(transcript)
+    speaker_info = get_speaker_info(processed_transcript)
     result["speakers"] = speaker_info
 
     # 3. Check if time stamps exist else create using llm
-    transcript_with_timestamps = ensure_timestamps(transcript, audio_length)
+    transcript_with_timestamps = ensure_timestamps(processed_transcript, audio_length)
     result["transcript_processed"] = transcript_with_timestamps
 
     # 4. Classify the conversation type using LLM
@@ -52,7 +53,7 @@ def analyze_transcript(filepath, transcript):
         result["status"] = "rejected"
         result["reason"] = quality_analysis["reason"]
     
-    return result
+    return json.dumps(result)
  
 def get_audio_length(file_path):
     if not os.path.exists(file_path):
