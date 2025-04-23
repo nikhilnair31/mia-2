@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MIA Lambda Response Data</title>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #FAF7FF;
+      color: #262626;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e0b1cb;
+    }
+    h1 {
+      font-size: 24px;
+      color: #9f86c0;
+      margin: 0;
+    }
+    button {
+      background-color: #be95c4;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #e0b1cb;
+    }
+    .data-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .data-item {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .data-item:last-child {
+      border-bottom: none;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: #808080;
+      margin-bottom: 5px;
+    }
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: #808080;
+      font-style: italic;
+    }
+    .data-key {
+      font-weight: bold;
+      color: #5e548e;
+    }
+    .data-value {
+      margin-left: 10px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 300px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>MIA Lambda Response Data</h1>
+      <button id="refreshBtn">Refresh Data</button>
+    </header>
+    
+    <div class="data-container">
+      <div id="dataList">
+        <div class="no-data">No response data available</div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="data.js"></script>
+</body>
+</html>
