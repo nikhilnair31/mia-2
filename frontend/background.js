@@ -28,23 +28,26 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 function parseResponseText(responseText) {
     // console.log(`parseResponseText`);
     // console.log(`responseText: ${responseText}`);
-    
     try {
-        const responseObj = JSON.parse(responseText);
+        // Handle case where responseText is already a JavaScript object
+        const responseObj = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
         
         if (responseObj.results && responseObj.results.length > 0) {
-            let formattedResponse = '';
-            for (let i = 0; i < responseObj.results.length; i++) {
-                formattedResponse += `\n\n${i + 1}. ${responseObj.results[i].analysis_raw_text}`;
-            }
-            return formattedResponse;
-        } 
-        else {
-            return "No results found in the response";
+            // Create an array of formatted results with both text and timestamp
+            const formattedResults = responseObj.results.map(result => ({
+                text: result.analysis_raw_text,
+                timestamp: result.timestamp_str
+            }));
+            
+            console.log(`Found ${formattedResults.length} results`);
+            return formattedResults;
+        } else {
+            console.log('No results found in response');
+            return [];
         }
-    } 
-    catch (error) {
-        return `Error parsing response: ${error.message}`;
+    } catch (error) {
+        console.error(`Error parsing response: ${error.message}`);
+        return [];
     }
 }
 
@@ -90,16 +93,10 @@ async function sendToLambda(text) {
                 // Parse the response into a formatted bullet point list
                 const formattedResponse = parseResponseText(responseText);
                 console.log(`formattedResponse: ${formattedResponse}`);
+
+                chrome.storage.local.set({notification: formattedResponse});
                 
-                // Get existing notifications or create new array
-                chrome.storage.local.get(['notification'], function(result) {
-                    let notification = result.notification || '';
-                    console.log(`notification: ${notification}`);
-                    
-                    chrome.storage.local.set({notification: notification});
-                    
-                    showNotificationBadge();
-                });
+                showNotificationBadge();
             }
         });
     } 
@@ -118,8 +115,8 @@ function showNotificationBadge() {
         clearTimeout(notificationTimer);
     }
     
-    // Set a new timer to clear the badge after 5 seconds
-    notificationTimer = setTimeout(clearNotificationBadge, 5000);
+    // Set a new timer to clear the badge after X seconds
+    notificationTimer = setTimeout(clearNotificationBadge, 15000);
 }
 function clearNotificationBadge() {
     chrome.action.setBadgeText({text: ''});
