@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Clear the badge when popup is opened
+    chrome.action.setBadgeText({text: ''});
+
     // Get saved username if it exists
     chrome.storage.local.get(['username'], function(result) {
         if (result.username) {

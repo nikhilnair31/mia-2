@@ -1,12 +1,11 @@
 function handleInput(event) {
-    const target = event.target;
+    console.log(`handleInput`);
+    // console.log(`event: ${JSON.stringify(event)}`);
     
-    if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        event.target.getAttribute('contenteditable') === 'true' ||
-        target.isContentEditable
-    ) {
+    const target = event.target;
+    // console.log(`target: ${JSON.stringify(target)}`);
+    
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || event.target.getAttribute('contenteditable') === 'true' || target.isContentEditable) {
         // Get the text from the input element
         let inputText = '';
         
@@ -17,6 +16,7 @@ function handleInput(event) {
             // For contenteditable elements
             inputText = event.target.textContent;
         }
+        console.log(`inputText: ${inputText}`);
         
         // Send the input text to the background script
         chrome.runtime.sendMessage({
@@ -27,7 +27,3 @@ function handleInput(event) {
 }
 
 document.addEventListener('input', handleInput, true);
-document.addEventListener('keyup', handleInput, true);  
-
-// Notify the user that the extension is active (optional)
-console.log('MIA Assistant is active on this page');

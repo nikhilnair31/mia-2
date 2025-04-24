@@ -37,9 +37,18 @@
 <body>
     <div class="container">
         <h3>MIA Extension</h3>
-        <input type="text" id="username" placeholder="Enter username">
-        <button id="saveUsername">Save Username</button>
-        <div id="status"></div>
+        
+        <div id="usernameForm">
+            <input type="text" id="username" placeholder="Enter username">
+            <button id="saveUsername">Save Username</button>
+            <div id="status"></div>
+        </div>
+        
+        <div class="view-responses">
+            <a href="response.html" target="_blank">View Stored Responses</a>
+        </div>
+
+        <p class="info-text">When at least 5 characters are typed on any webpage, data will be sent to your Lambda function.</p>
     </div>
     <script src="popup.js"></script>
 </body>
