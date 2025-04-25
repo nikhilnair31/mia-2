@@ -84,6 +84,10 @@ async function sendToLambda(text) {
             const formattedResponse = parseResponseText(responseText);
             console.log(`formattedResponse: ${formattedResponse}`);
 
+            if (formattedResponse.length === 0) {
+                console.warn('No valid response received from Lambda.');
+                return;
+            }
             chrome.storage.local.set({notification: formattedResponse});
             
             showNotificationBadge();
