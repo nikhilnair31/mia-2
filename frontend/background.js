@@ -2,7 +2,6 @@ const LAMBDA_URL = 'https://rxirv3zxmn4woy6hztdqrmfigy0lsurc.lambda-url.ap-south
 
 let notificationTimer;
 
-// Add listener for when the extension icon is clicked
 chrome.action.onClicked.addListener(() => {
     clearNotificationBadge();
     
@@ -16,7 +15,6 @@ chrome.action.onClicked.addListener(() => {
         // The popup will open automatically on click if there's no notification
     }
 });
-// Process text and send to Lambda
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     console.log(`message: ${JSON.stringify(message)}`);
     
@@ -26,16 +24,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 });
 
 function parseResponseText(responseText) {
-    // console.log(`parseResponseText`);
-    // console.log(`responseText: ${responseText}`);
     try {
-        // Handle case where responseText is already a JavaScript object
         const responseObj = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
         
         if (responseObj.results && responseObj.results.length > 0) {
-            // Create an array of formatted results with both text and timestamp
             const formattedResults = responseObj.results.map(result => ({
-                text: result.analysis_raw_text,
+                image_text: result.analysis_raw_text,
+                image_url: result.image_objectkey,
                 timestamp: result.timestamp_str
             }));
             
@@ -51,54 +46,48 @@ function parseResponseText(responseText) {
     }
 }
 
-// Send text to Lambda function
 async function sendToLambda(text) {
-    // console.log(`sendToLambda`);
-    // console.log(`text: ${text}`);
-
     try {
-        // Get the username from storage
-        chrome.storage.local.get(['username'], async function(result) {
-            // console.log(`result: ${JSON.stringify(result)}`);
-            if (!result.username) {
-                console.warn('Username not set. Cannot send data to Lambda.');
-                return;
-            }
-            
-            const username = result.username;
-            // console.log(`username: ${username}`);
-            
-            // Prepare data for Lambda
-            const data = {
-                username: username,
-                content: text
-            };
-            console.log(`data: ${JSON.stringify(data)}`);
-            
-            // Send to Lambda
-            const response = await fetch(LAMBDA_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            // Check if response is 200
-            if (response.status === 200) {
-                // Get the response content
-                const responseText = await response.text();
-                console.log(`responseText: ${responseText}`);
-
-                // Parse the response into a formatted bullet point list
-                const formattedResponse = parseResponseText(responseText);
-                console.log(`formattedResponse: ${formattedResponse}`);
-
-                chrome.storage.local.set({notification: formattedResponse});
-                
-                showNotificationBadge();
-            }
+        // Get username from storage using a Promise wrapper
+        const result = await new Promise((resolve) => {
+            chrome.storage.local.get(['username'], resolve);
         });
+        
+        if (!result.username) {
+            console.warn('Username not set. Cannot send data to Lambda.');
+            return;
+        }
+            
+        const username = result.username;
+        
+        const data = {
+            username: username,
+            content: text
+        };
+        console.log(`data: ${JSON.stringify(data)}`);
+        
+        const response = await fetch(LAMBDA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        // Check if response is 200
+        if (response.status === 200) {
+            // Get the response content
+            const responseText = await response.text();
+            console.log(`responseText: ${responseText}`);
+
+            // Parse the response into a formatted bullet point list
+            const formattedResponse = parseResponseText(responseText);
+            console.log(`formattedResponse: ${formattedResponse}`);
+
+            chrome.storage.local.set({notification: formattedResponse});
+            
+            showNotificationBadge();
+        }
     } 
     catch (error) {
         console.error('Error sending data to Lambda:', error);

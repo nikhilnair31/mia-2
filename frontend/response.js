@@ -1,3 +1,45 @@
+// const searchInput = document.getElementById('searchInput');
+
+// let allItems = []; 
+
+// searchInput.addEventListener('input', function(e) {
+//     const searchTerm = e.target.value;
+//     console.log('Search term:', searchTerm);
+    
+//     chrome.runtime.sendMessage({
+//         type: 'INPUT_CHANGE',
+//         text: searchTerm
+//     });
+    
+//     filterItems(searchTerm);
+// });
+
+// function filterItems(searchTerm) {
+//     if (!allItems.length) return;
+    
+//     const gridItems = document.querySelectorAll('.grid-item');
+//     gridItems.forEach(item => {
+//         item.style.display = 'none';
+//     });
+    
+//     if (!searchTerm) {
+//         gridItems.forEach(item => {
+//             item.style.display = 'block';
+//         });
+//         return;
+//     }
+    
+//     allItems.forEach((item, index) => {
+//         const analysisText = item.analysis || item.analysis_raw_text || '';
+//         const timestamp = item.timestamp || '';
+        
+//         if (analysisText.toLowerCase().includes(searchTerm) || 
+//             timestamp.toLowerCase().includes(searchTerm)) {
+//             gridItems[index].style.display = 'block';
+//         }
+//     });
+// }
+
 document.addEventListener('DOMContentLoaded', function() {
     const responseContent = document.getElementById('responseContent');
     
@@ -18,54 +60,113 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (Array.isArray(jsonResponse)) {
                     // Handle array of messages
                     jsonResponse.forEach(item => {
-                        const responseItem = document.createElement('div');
-                        responseItem.className = 'response-item';
+                        const gridItem = document.createElement('div');
+                        gridItem.className = 'grid-item';
                         
-                        if (item.text) {
-                            const textContent = document.createElement('p');
-                            textContent.textContent = item.text;
-                            responseItem.appendChild(textContent);
+                        if (item.image_url) {
+                            // Create image element
+                            const img = document.createElement('img');
+                            img.src = item.image_url;
+                            img.onerror = function() {
+                                // Replace with broken image placeholder
+                                this.outerHTML = `<div class="broken-image">Image not available</div>`;
+                            };
+                            gridItem.appendChild(img);
+                        } 
+                        else {
+                            // Fallback if no image
+                            const brokenImage = document.createElement('div');
+                            brokenImage.className = 'broken-image';
+                            brokenImage.textContent = 'No image available';
+                            gridItem.appendChild(brokenImage);
+                        }
                             
-                            if (item.timestamp) {
-                                const timestamp = document.createElement('small');
-                                timestamp.className = 'timestamp';
-                                timestamp.textContent = item.timestamp;
-                                responseItem.appendChild(timestamp);
-                            }
-                        } else {
-                            // Fallback if the structure is different
-                            const formattedContent = document.createElement('pre');
-                            formattedContent.textContent = JSON.stringify(item, null, 2);
-                            responseItem.appendChild(formattedContent);
+                        // Add timestamp
+                        if (item.timestamp) {
+                            const timestamp = document.createElement('div');
+                            timestamp.className = 'timestamp';
+                            timestamp.textContent = item.timestamp;
+                            gridItem.appendChild(timestamp);
+                        }
+                            
+                        // Show analysis if available
+                        if (item.image_text) {
+                            const analysisText = document.createElement('div');
+                            analysisText.className = 'analysis-text';
+                            analysisText.textContent = item.image_text;
+                            gridItem.appendChild(analysisText);
                         }
                         
-                        responseContent.appendChild(responseItem);
+                        responseContent.appendChild(gridItem);
                     });
                 } 
                 else if (typeof jsonResponse === 'object') {
-                    // Single object
-                    const responseItem = document.createElement('div');
-                    responseItem.className = 'response-item';
-                    const formattedContent = document.createElement('pre');
-                    formattedContent.textContent = JSON.stringify(jsonResponse, null, 2);
-                    responseItem.appendChild(formattedContent);
-                    responseContent.appendChild(responseItem);
+                    // Single object - handle similarly
+                    const item = jsonResponse;
+                    const gridItem = document.createElement('div');
+                    gridItem.className = 'grid-item';
+                    
+                    if (item.image_url) {
+                        const img = document.createElement('img');
+                        img.src = item.image_url;
+                        img.onerror = function() {
+                            this.outerHTML = `<div class="broken-image">Image not available</div>`;
+                        };
+                        gridItem.appendChild(img);
+                        
+                        if (item.timestamp) {
+                            const timestamp = document.createElement('div');
+                            timestamp.className = 'timestamp';
+                            timestamp.textContent = item.timestamp;
+                            gridItem.appendChild(timestamp);
+                        }
+                        
+                        if (item.analysis) {
+                            const analysisText = document.createElement('div');
+                            analysisText.className = 'analysis-text';
+                            analysisText.textContent = item.analysis;
+                            gridItem.appendChild(analysisText);
+                        }
+                        // For backward compatibility with analysis_raw_text
+                        else if (item.analysis_raw_text) {
+                            const analysisText = document.createElement('div');
+                            analysisText.className = 'analysis-text';
+                            analysisText.textContent = item.analysis_raw_text;
+                            gridItem.appendChild(analysisText);
+                        }
+                    } else {
+                        const brokenImage = document.createElement('div');
+                        brokenImage.className = 'broken-image';
+                        brokenImage.textContent = 'No image available';
+                        gridItem.appendChild(brokenImage);
+                        
+                        if (item.analysis) {
+                            const analysisText = document.createElement('div');
+                            analysisText.className = 'analysis-text';
+                            analysisText.textContent = item.analysis;
+                            gridItem.appendChild(analysisText);
+                        }
+                        // For backward compatibility with analysis_raw_text
+                        else if (item.analysis_raw_text) {
+                            const analysisText = document.createElement('div');
+                            analysisText.className = 'analysis-text';
+                            analysisText.textContent = item.analysis_raw_text;
+                            gridItem.appendChild(analysisText);
+                        }
+                    }
+                    
+                    responseContent.appendChild(gridItem);
                 } 
                 else {
-                    // Simple string
-                    const responseItem = document.createElement('div');
-                    responseItem.className = 'response-item';
-                    responseItem.textContent = result.notification;
-                    responseContent.appendChild(responseItem);
+                    // Simple string - show error message
+                    responseContent.innerHTML = '<p class="no-responses">Invalid data format received.</p>';
                 }
             } 
             catch (e) {
-                const responseItem = document.createElement('div');
-                responseItem.className = 'response-item error';
-                responseItem.textContent = "Error parsing response: " + e.message;
-                responseContent.appendChild(responseItem);
+                responseContent.innerHTML = `<p class="no-responses">Error parsing response: ${e.message}</p>`;
             }
-        } else {
+        } 
+        else {
             responseContent.innerHTML = '<p class="no-responses">No responses received yet.</p>';
         }
     });
