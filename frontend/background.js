@@ -53,7 +53,6 @@ async function sendToLambda(searchText = '', isSearch = false) {
         const result = await new Promise((resolve) => {
             chrome.storage.local.get(['username'], resolve);
         });
-
         if (!result.username) {
             console.warn('Username not set. Cannot send data to Lambda.');
             return;

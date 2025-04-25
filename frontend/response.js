@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const responseContent = document.getElementById('responseContent');
     const searchInput = document.getElementById('searchInput');
+    const userIcon = document.getElementById('userIcon');
 
     // Function to display the responses
     function displayResponses(responses) {
@@ -84,6 +85,16 @@ document.addEventListener('DOMContentLoaded', function() {
             displayResponses(result.notification);
         } else {
             responseContent.innerHTML = '<p class="no-responses">No responses received yet.</p>';
+        }
+    });
+
+    // Load the username when the page loads
+    chrome.storage.local.get(['username'], function(result) {
+        if (result.username) {
+            userIcon.textContent = result.username.charAt(0).toUpperCase();
+        } 
+        else {
+            userIcon.textContent = 'U';
         }
     });
 
