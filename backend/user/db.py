@@ -1,10 +1,14 @@
-import json
 import os
+import json
+import logging
 import sqlite3
 import datetime
 
+logger = logging.getLogger()
+logger.setLevel("INFO")
+
 def initialize_personas_tbl(db_filepath):
-    print(f"\nInitializing personas table at: {db_filepath}")
+    logger.info(f"\nInitializing personas table at: {db_filepath}")
     
     os.makedirs(os.path.dirname(db_filepath), exist_ok=True)
     
@@ -17,21 +21,20 @@ def initialize_personas_tbl(db_filepath):
             PERSONAS (
                 USERNAME TEXT,
                 PERSONA_STR TEXT,
-                TODAY_STR TEXT,
                 TIMESTAMP_STR TEXT
             )
         ''')
         conn.commit()
         conn.close()
         
-        print(f"Table initialized successfully at {db_filepath}")
+        logger.info(f"Table initialized successfully at {db_filepath}")
         return True
     except sqlite3.Error as e:
-        print(f"Table initialization error: {e}")
+        logger.error(f"Table initialization error: {e}")
         return False
 
 def insert_persona_to_tbl(db_filepath, insert_data):
-    print(f"\nInserting into personas table at: {db_filepath}")
+    logger.info(f"\nInserting into personas table at: {db_filepath}")
 
     try:
         conn = sqlite3.connect(db_filepath)
@@ -40,23 +43,20 @@ def insert_persona_to_tbl(db_filepath, insert_data):
             """
             INSERT INTO PERSONAS (
                 USERNAME, 
-                PERSONA_STR, 
-                TODAY_STR,
+                PERSONA_STR,
                 TIMESTAMP_STR
             ) 
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?)
             """,
             insert_data
         )
         conn.commit()
     except sqlite3.Error as e:
-        print(f"Database initialization error: {e}")
+        logger.error(f"Database initialization error: {e}")
         return False
 
-def get_recent_transcripts(db_filepath, max_transcripts_per_user = 3):
-    # Get today's date
-    today_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    print(f"Getting transcripts on date {today_date} from db at: {db_filepath}")
+def get_recent_transcripts(db_filepath, max_transcripts_per_user = 50):
+    logger.info(f"Getting {max_transcripts_per_user} transcripts...")
     
     try:
         conn = sqlite3.connect(db_filepath)
@@ -64,42 +64,52 @@ def get_recent_transcripts(db_filepath, max_transcripts_per_user = 3):
         
         cursor.execute(
             """
-                SELECT TRANSCRIPT_PROCESSED_TEXT, ANALYSIS_JSON 
-                FROM TRANSCRIPTIONS 
-                WHERE TODAY_STR LIKE ?
+                SELECT 
+                    TIMESTAMP_STR, TRANSCRIPT_PROCESSED_TEXT, ANALYSIS_JSON 
+                FROM TRANSCRIPTIONS
+                WHERE 
+                    TRANSCRIPT_RAW_TEXT IS NOT NULL 
+                    AND TRANSCRIPT_RAW_TEXT <> ''
+                    AND ANALYSIS_JSON LIKE '%analyzed%'
+                ORDER BY TIMESTAMP_STR DESC
+                LIMIT ?
             """, 
-            (f"{str(today_date)}%",)
+            (max_transcripts_per_user,)
         )
         
         results = cursor.fetchall()
-        print(f"results: {results}\nlen(results): {len(results)}")
+        # logger.info(f"transcripts results: {results}")
         conn.close()
         
-        valid_transcripts = []
-        for transcript, analysis_json in results:
-            print(f"transcript: {transcript}\nanalysis_json: {analysis_json}")
-            
-            if not transcript:
-                continue
-                
-            # if analysis_json:
-            #     try:
-            #         analysis = json.loads(analysis_json)
-            #         print(f"analysis: {analysis}")
-                    
-            #         if analysis.get('status') in ['rejected', 'ignored']:
-            #             continue
-            #     except:
-            #         pass
-            
-            valid_transcripts.append(transcript)
-            
-            if len(valid_transcripts) >= max_transcripts_per_user:
-                break
-        
-        print(f"Found {len(valid_transcripts)} valid transcripts")
-        return valid_transcripts
+        return results
         
     except Exception as e:
-        print(f"Error getting transcripts: {str(e)}")
+        logger.error(f"Error getting transcripts: {str(e)}")
+        return
+def get_latest_persona(db_filepath):
+    logger.info(f"Getting lastest persona...")
+    
+    try:
+        conn = sqlite3.connect(db_filepath)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            """
+                SELECT PERSONA_STR
+                FROM PERSONAS
+                ORDER BY TIMESTAMP_STR DESC
+                LIMIT 1
+            """
+        )
+        
+        results = cursor.fetchall()
+        # logger.info(f"results: {results}")
+        persona_str = '-' if results[0][0] is None else str(results[0][0])
+        # logger.info(f"persona_str: {persona_str}")
+        conn.close()
+        
+        return persona_str
+        
+    except Exception as e:
+        logger.error(f"Error getting personas: {str(e)}")
         return
