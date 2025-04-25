@@ -19,7 +19,7 @@ def lambda_handler(event, context):
         
         # Get audio file metadata
         audio_metadata = get_s3_file_metadata(s3, bucket_name, audio_object_key)
-        audio_metadata['preprocessaudiofile'] = 'false'
+        audio_metadata['preprocessfile'] = 'false'
         print(f"audio_metadata: {audio_metadata}")
 
         # Download audio file from S3

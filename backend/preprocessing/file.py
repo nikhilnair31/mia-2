@@ -7,22 +7,15 @@ def get_s3_file_metadata(s3, bucket_name, object_key):
         response = s3.head_object(Bucket=bucket_name, Key=object_key)
         
         user_metadata = response.get('Metadata', {})
-        
+
         metadata = {
-            'content_type': response.get('ContentType', ''),
-            'battery_level': user_metadata.get('batterylevel'),
-            'timestamp': user_metadata.get('currenttimeformattedstring'),
-            'filename': user_metadata.get('filename'),
-            'latitude': user_metadata.get('latitude'),
-            'longitude': user_metadata.get('longitude'),
-            'movement_status': user_metadata.get('movementstatus'),
-            'preprocessaudiofile': user_metadata.get('preprocessaudiofile'),
-            'saveaudiofile': user_metadata.get('saveaudiofile'),
-            'source': user_metadata.get('source'),
-            'username': user_metadata.get('username')
+            'content_type': response.get('ContentType', '')
         }
-        
-        print(f"Successfully retrieved metadata for: {bucket_name}/{object_key}")
+
+        user_metadata = response.get('Metadata', {})
+        metadata.update(user_metadata)
+
+        logger.info(f"Successfully retrieved metadata for: {bucket_name}/{object_key}")
         return metadata
         
     except Exception as e:
