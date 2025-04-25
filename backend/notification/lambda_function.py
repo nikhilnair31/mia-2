@@ -1,77 +1,147 @@
 import json
 import boto3
 import random
+import logging
 import datetime
 import traceback
-from llm import call_llm_api
-from file import check_s3_object_exists, file_download
-from db import get_recent_transcripts
+from llm import (
+    call_llm_api
+)
+from file import (
+    check_s3_object_exists, 
+    file_upload, file_download
+)
+from db import (
+    initialize_notifications_tbl, 
+    insert_notification_to_tbl, 
+    get_recent_transcripts, get_recent_notifications, get_latest_persona
+)
 
-S3 = boto3.client('s3')
+logger = logging.getLogger()
+logger.setLevel("INFO")
+
+s3 = boto3.client('s3')
 
 BUCKET_NAME = 'mia-2'
 
-NOTIFICATION_PROMPT = """
-You are an AI assistant designed to analyze historical transcripts and create actionable notifications for users. Your task is to review the following transcripts and determine if a notification should be generated based on their content.
+def generate_notification(username, transcript_data, notification_data, persona_str, timestamp_str) -> dict:
+    NOTIFICATION_SYSTEM_PROMPT = """
+        You are an AI assistant designed to analyze historical transcripts and create actionable notifications for users. Your task is to review the provided transcripts and determine if a notification should be generated based on their content.
 
-Here are the historical transcripts to analyze:
+        You'll recieve information in the following format:
+        
+        <todays_date>
+        {{TODAYS_DATE}}
+        </todays_date>
 
-<historical_transcripts>
-{{HISTORICAL_TRANSCRIPTS}}
-</historical_transcripts>
+        <user_persona>
+        {{USER_PERSONA}}
+        </user_persona>
 
-Please follow these steps to complete the task:
+        <recent_notifications>
+        {{RECENT_NOTIFICATIONS}}
+        </recent_notifications>
 
-1. Carefully review the provided transcripts.
-2. Extract and quote relevant parts of the transcripts.
-3. Categorize potential actionable items as events, reminders, or tasks.
-4. Evaluate the urgency and importance of each item.
-5. Determine if a notification should be generated based on your analysis.
-6. If a notification is warranted, create a concise, actionable content of no more than 15 words.
+        <recent_transcripts>
+        {{RECENT_TRANSCRIPTS}}
+        </recent_transcripts>
 
-Wrap your analysis inside <transcript_analysis> tags:
+        Please follow these steps to complete the task:
 
-<transcript_analysis>
-- Quote relevant parts of the transcripts
-- Categorize potential actionable items (events, reminders, tasks)
-- Evaluate the urgency and importance of each item
-- Summarize the key points from the transcripts
-- Explain your reasoning for deciding whether a notification is needed
-- If applicable, draft the notification content and explain how it relates to the transcripts
-</transcript_analysis>
+        1. Carefully review the provided transcripts.
+        2. Extract relevant quotes from the transcripts.
+        3. Categorize potential actionable items as events, reminders, or tasks.
+        4. Evaluate the urgency and importance of each item, considering the user's persona and the time relative to the present.
+        5. List out potential notifications based on your analysis.
+        6. Determine if a notification should be generated based on your analysis.
+        7. If a notification is warranted, create a concise, actionable content of no more than 15 words.
 
-After your analysis, provide your final output in the following format:
+        Wrap your analysis inside <detailed_analysis> tags:
 
-is_notification: [true/false]
-content: [Your 15-word max actionable content OR "No notification required"]
+        <detailed_analysis>
+        - Quote relevant parts of the transcripts
+        - Categorize potential actionable items (events, reminders, tasks)
+        - Evaluate the urgency and importance of each item, considering the user's persona and time relative to present
+        - Summarize the key points from the transcripts
+        - List potential notifications (up to 3) based on your analysis
+        - For each potential notification, assess its time sensitivity (urgent, soon, or future)
+        - Explain your reasoning for deciding whether a notification is needed and which one to choose
+        - If applicable, draft the final notification content and explain how it relates to the transcripts
+        </detailed_analysis>
 
-Remember:
-- The content must be directly based on information from the transcripts.
-- Keep the content concise and actionable, focusing on events, reminders, or tasks.
-- Ensure the content does not exceed 15 words.
-- If no notification is needed, set is_notification to false and content to "No notification required".
-"""
+        After your analysis, provide your final output in the following format:
 
-def generate_notification(username, transcripts) -> dict:
-    user_prompt = f"Transcripts:\n"
-    for i, transcript in enumerate(transcripts, 1):
-        user_prompt += f"\n--- Transcript {i} ---\n{transcript}\n"
-    print(f'\nuser_prompt:\n{user_prompt}\n')
+        is_notification: [true/false]
+        content: [Your 15-word max actionable content OR "No notification required"]
+
+        Remember:
+        - The content must be directly based on information from the transcripts.
+        - Keep the content concise and actionable, focusing on events, reminders, or tasks.
+        - Ensure the content does not exceed 15 words.
+        - Do not refer to specific timestamps in the notification content.
+        - If no notification is needed, set is_notification to false and content to "No notification required".
+        - Prioritize information based on its relevance to the present time and the user's persona.
+
+        Example output (for illustration only):
+
+        <detailed_analysis>
+        [Your detailed analysis would go here]
+        </detailed_analysis>
+
+        is_notification: true
+        content: Remember to schedule car maintenance appointment this week.
+
+        OR
+
+        is_notification: false
+        content: No notification required
+    """
+    BASE_USER_PROMPT = """
+        <todays_date>
+        {{TODAYS_DATE}}
+        </todays_date>
+
+        <user_persona>
+        {{USER_PERSONA}}
+        </user_persona>
+
+        <recent_notifications>
+        {{RECENT_NOTIFICATIONS}}
+        </recent_notifications>
+
+        <recent_transcripts>
+        {{RECENT_TRANSCRIPTS}}
+        </recent_transcripts>
+    """
+
+    recent_notifications_str = "\n".join([f"Notification {row[0]}: {row[1]}\n" for i, row in enumerate(notification_data, 1)])
+    logger.info(f'recent_notifications_str:\n{recent_notifications_str}')
+    recent_transcripts_str = "\n".join([f"\n--- Transcript {row[0]} ---\n{row[1]}" for i, row in enumerate(transcript_data, 1)])
+    logger.info(f'recent_transcripts_str:\n{recent_transcripts_str}')
+    
+    BASE_USER_PROMPT = BASE_USER_PROMPT.replace('{{TODAYS_DATE}}', timestamp_str)
+    BASE_USER_PROMPT = BASE_USER_PROMPT.replace('{{USER_PERSONA}}', persona_str)
+    BASE_USER_PROMPT = BASE_USER_PROMPT.replace('{{RECENT_NOTIFICATIONS}}', recent_notifications_str)
+    BASE_USER_PROMPT = BASE_USER_PROMPT.replace('{{RECENT_TRANSCRIPTS}}', recent_transcripts_str)
+    logger.info(f'BASE_USER_PROMPT:\n{BASE_USER_PROMPT}')
     
     try:
-        response = call_llm_api(NOTIFICATION_PROMPT, user_prompt)
+        response = call_llm_api(NOTIFICATION_SYSTEM_PROMPT, BASE_USER_PROMPT)
+        logger.info(f'response: {response}')
         response_text = response['candidates'][0]['content']['parts'][0]['text']
-        print(f'type: {type(response_text)} | response_text: {response_text}')
+        logger.info(f'response_text: {response_text}')
+        final_text = response_text.split('</detailed_analysis>')[-1]
+        logger.info(f'final_text: {final_text}')
+        content_part = final_text.split('content:')[1].strip() if 'content:' in final_text else None
+        logger.info(f'content_part: {content_part}')
 
-        return True, response_text.split('content:')[1].strip()
-
-        # if "true" in response_text.lower().strip():
-        #     return True, response_text.split('content:')[1].strip()
-        # else:
-        #     return False, None
+        if "true" in final_text.lower().strip():
+            return True, content_part
+        else:
+            return False, None
             
     except Exception as e:
-        print(f"Error calling LLM API for user {username}: {str(e)}")
+        logger.error(f"Error calling LLM API for user {username}: {str(e)}")
         return False, None
 
 def get_notification_data(username):
@@ -79,21 +149,42 @@ def get_notification_data(username):
     user_db_temp_filepath = f"/tmp/{username}_data.db"
 
     # Check if user's db exists
-    user_db_exists = check_s3_object_exists(S3, BUCKET_NAME, user_db_object_key)
+    user_db_exists = check_s3_object_exists(s3, BUCKET_NAME, user_db_object_key)
     if user_db_exists:
-        user_db_download_success = file_download(S3, BUCKET_NAME, user_db_object_key, user_db_temp_filepath)
+        user_db_download_success = file_download(s3, BUCKET_NAME, user_db_object_key, user_db_temp_filepath)
         if not user_db_download_success:
-            raise Exception(f"Failed to download database file from S3: {BUCKET_NAME}/{user_db_object_key}")
-            
+            raise Exception(f"Failed to download database file from s3: {BUCKET_NAME}/{user_db_object_key}")
+    
+    # Date vars
+    today_date = datetime.datetime.now()
+    timestamp_str = str(datetime.datetime.now())
+
+    # Get user's recent notifications
+    notification_data = get_recent_notifications(user_db_temp_filepath)
     # Get user's recent transcripts
-    transcripts = get_recent_transcripts(user_db_temp_filepath)
-    if not transcripts:
-        print(f"No valid transcripts found for user: {username}")
-        return
+    transcript_data = get_recent_transcripts(user_db_temp_filepath)
+    # Get user's latest persona
+    persona_str = get_latest_persona(user_db_temp_filepath)
             
     # Generate notification data
-    show_notif_bool, notif_content_str = generate_notification(username, transcripts)
-    print(f'show_notif_bool: {show_notif_bool} | notif_content_str: {notif_content_str}')
+    show_notif_bool, notif_content_str = generate_notification(
+        username, transcript_data, notification_data, persona_str, timestamp_str
+    )
+ 
+    # Ensure the notifications table exists
+    initialize_notifications_tbl(user_db_temp_filepath)
+    # Then insert into table
+    insert_data = (
+        show_notif_bool,
+        notif_content_str,
+        timestamp_str
+    )
+    insert_notification_to_tbl(user_db_temp_filepath, insert_data)
+        
+    # Upload to S3
+    db_upload_success = file_upload(s3, BUCKET_NAME, user_db_object_key, user_db_temp_filepath)
+    if not db_upload_success:
+        raise Exception(f"Failed to upload database file from S3: {BUCKET_NAME}/{user_db_object_key}")
 
     if show_notif_bool:
         return {
@@ -109,7 +200,7 @@ def get_notification_data(username):
         }
 
 def lambda_handler(event, context):
-    print(f"\nevent: {event}\n")
+    logger.info(f"\nevent: {event}\n")
     
     try:
         body = json.loads(event.get('body'))
@@ -132,7 +223,7 @@ def lambda_handler(event, context):
 
         elif action == 'feedback':
             feedback_type = body.get('feedback')
-            print(f"Received feedback from {username}: {feedback_type}")
+            logger.info(f"Received feedback from {username}: {feedback_type}")
             
             return {
                 'statusCode': 200,
@@ -146,8 +237,7 @@ def lambda_handler(event, context):
             }
     
     except Exception as e:
-        print(f"Error: {str(e)}")
-        print(traceback.format_exc())
+        logger.error(f"Error: {str(e)}\n{traceback.format_exc()}")
         
         return {
             'statusCode': 500,

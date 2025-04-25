@@ -1,23 +1,27 @@
 import os
+import logging
 import requests
 
-provider = "gemini"
+logger = logging.getLogger()
+logger.setLevel("INFO")
+
+PROVIDER = "gemini"
 
 def call_llm_api(sysprompt, userprompt):
-    print(f"\nLLM...")
+    logger.info(f"\nLLM...")
 
-    if provider == "gemini":
+    if PROVIDER == "gemini":
         response_json = call_gemini(sysprompt, userprompt)
         return response_json
         
     return ""
 
 def call_gemini(sysprompt, userprompt):
-    print(f"\nCalling Gemini...")
+    logger.info(f"\nCalling Gemini...")
 
-    GEMINI_API_KEY = os.environ.get("GOOGLE_API")
+    GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
     if not GEMINI_API_KEY:
-        raise ValueError("GOOGLE_API environment variable not set.")
+        raise ValueError("GOOGLE_API_KEY environment variable not set.")
 
     MODEL_ID = "gemini-2.0-flash"
     LLM_API_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:generateContent?key={GEMINI_API_KEY}"
@@ -47,6 +51,6 @@ def call_gemini(sysprompt, userprompt):
 
     response = requests.post(LLM_API_ENDPOINT, headers=headers, json=data)
     response_json = response.json()
-    print(f"response_json: {response_json}")
+    logger.info(f"response_json: {response_json}")
     
     return response_json
