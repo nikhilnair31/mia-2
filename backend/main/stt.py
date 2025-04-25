@@ -1,20 +1,24 @@
 import os
 import json
+import logging
 import requests
 
-provider = "groq"
+logger = logging.getLogger()
+logger.setLevel("INFO")
+
+PROVIDER = "groq"
 
 def call_transcription_api(temp_file_path):
-    print(f"\nTranscribing...")
+    logger.info(f"\nTranscribing...")
 
-    if provider == "groq":
+    if PROVIDER == "groq":
         response_json = call_groq_whisper(temp_file_path)
         return format_groq_response(response_json)
     
     return "", {}
     
 def call_groq_whisper(temp_file_path):
-    print(f"\nUsing Groq Whisper...")
+    logger.info(f"\nUsing Groq Whisper...")
 
     GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
     if not GROQ_API_KEY:
@@ -40,7 +44,7 @@ def call_groq_whisper(temp_file_path):
         response = requests.post(STT_API_ENDPOINT, headers=headers, files=files, data=data)
     
     response_json = response.json()
-    print(f"response_json: {response_json}")
+    logger.info(f"response_json: {response_json}")
 
     return response_json
 def format_groq_response(response_json):

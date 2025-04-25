@@ -1,17 +1,14 @@
 import os
 import re
 import json
-from pydub import AudioSegment
+import logging
 from llm import call_llm_api
 
-FFMPEG_PATH = "/opt/ffmpeg/bin/ffmpeg"
-FFPROBE_PATH = "/opt/ffmpeg/bin/ffprobe"
-os.environ["PATH"] = f"/opt/ffmpeg/bin:{os.environ.get('PATH', '')}"
-AudioSegment.converter = FFMPEG_PATH
-AudioSegment.ffprobe = FFPROBE_PATH
+logger = logging.getLogger()
+logger.setLevel("INFO")
 
 def analyze_transcript(filepath, processed_transcript):
-    print(f"Analyzing processed_transcript for file: {filepath} | Processed transcript: {processed_transcript[:50]}...")
+    logger.info(f"Analyzing processed_transcript for file: {filepath} | Processed transcript: {processed_transcript[:50]}...")
 
     # Create default result
     result = {
@@ -21,16 +18,16 @@ def analyze_transcript(filepath, processed_transcript):
 
     # 1. Check if the audio file is too short
     try:
-        audio_length = get_audio_length(filepath)
-        result["length_seconds"] = audio_length
+        audio_length = len(processed_transcript.split(' '))
+        result["length_words"] = audio_length
         
-        # If audio is too short (less than 10 seconds), return early
-        if audio_length < 10:
+        # If audio is too short (less than 5 words), return early
+        if audio_length < 5:
             result["status"] = "ignored"
-            result["reason"] = "Audio too short (less than 10 seconds)"
+            result["reason"] = "Audio too short (less than 5 words)"
             return json.dumps(result)
     except Exception as e:
-        print(f"Error checking audio length: {str(e)}")
+        logger.error(f"Error checking audio length: {str(e)}")
         # Continue with analysis even if we couldn't get audio length
         result["length_seconds"] = None
 
@@ -54,18 +51,6 @@ def analyze_transcript(filepath, processed_transcript):
         result["reason"] = quality_analysis["reason"]
     
     return json.dumps(result)
- 
-def get_audio_length(file_path):
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"The file '{file_path}' does not exist.")
-    
-    try:
-        length = AudioSegment.from_file(file_path).duration_seconds
-        print(f"Audio length: {length} seconds")
-        return length
-    except Exception as e:
-        print(f"Error getting audio length: {str(e)}")
-        raise
 
 def get_speaker_info(transcript):
     # Extract speaker turns from transcript
@@ -74,7 +59,7 @@ def get_speaker_info(transcript):
     
     # If no speaker labels found, create them using LLM
     if not turns:
-        print("No speaker labels found. Creating with LLM...")
+        logger.info("No speaker labels found. Creating with LLM...")
         transcript_with_speakers = create_speaker_labels(transcript)
         turns = re.findall(speaker_pattern, transcript_with_speakers)
     
@@ -107,7 +92,7 @@ def get_speaker_info(transcript):
         "turn_taking": turn_taking
     }
 def create_speaker_labels(transcript):
-    system_prompt = """
+    SYSTEM_PROMPT = """
     You are an expert at analyzing conversation transcripts. 
     Add appropriate speaker labels to the transcript below. 
     Use "Speaker 1:", "Speaker 2:", etc. for different speakers.
@@ -115,13 +100,13 @@ def create_speaker_labels(transcript):
     Format the output as a proper transcript with speakers clearly indicated.
     """
     
-    user_prompt = f"""
+    USER_PROMPT = f"""
     Here is a transcript without speaker labels. Please add them:
     
     {transcript}
     """
     
-    response = call_llm_api(system_prompt, user_prompt)
+    response = call_llm_api(SYSTEM_PROMPT, USER_PROMPT)
     
     if isinstance(response, dict) and "text" in response:
         return response["text"]
@@ -142,14 +127,14 @@ def ensure_timestamps(transcript, audio_length):
     # If no timestamps, create them
     return create_timestamps(transcript, audio_length)
 def create_timestamps(transcript, audio_length):
-    system_prompt = """
+    SYSTEM_PROMPT = """
     You are an expert at analyzing conversation transcripts.
     Add appropriate timestamps to the transcript below.
     Use the format [MM:SS:00] at natural break points in the conversation.
     Distribute timestamps evenly across the transcript based on the total audio length.
     """
     
-    user_prompt = f"""
+    USER_PROMPT = f"""
     Here is a transcript without timestamps. 
     The total audio length is approximately {audio_length} seconds.
     Please add timestamps in the format [MM:SS:00]:
@@ -157,7 +142,7 @@ def create_timestamps(transcript, audio_length):
     {transcript}
     """
     
-    response = call_llm_api(system_prompt, user_prompt)
+    response = call_llm_api(SYSTEM_PROMPT, USER_PROMPT)
     
     if isinstance(response, dict) and "text" in response:
         return response["text"]
