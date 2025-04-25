@@ -22,8 +22,9 @@ function handleInput(event) {
             console.log(`inputText: ${inputText}`);
             
             chrome.runtime.sendMessage({
-                type: 'INPUT_CHANGE',
-                text: inputText
+                type: 'SEARCH_REQUEST',
+                query: inputText,
+                search: false
             });
         }, 500); // 500ms delay
     }
