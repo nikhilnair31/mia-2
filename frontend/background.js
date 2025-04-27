@@ -24,29 +24,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     }
 });
 
-function parseResponseText(responseText) {
-    try {
-        const responseObj = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
-
-        if (responseObj.results && responseObj.results.length > 0) {
-            const formattedResults = responseObj.results.map(result => ({
-                image_text: result.analysis_raw_text,
-                image_url: result.image_objectkey,
-                timestamp: result.timestamp_str
-            }));
-
-            console.log(`Found ${formattedResults.length} results`);
-            return formattedResults;
-        } else {
-            console.log('No results found in response');
-            return [];
-        }
-    } catch (error) {
-        console.error(`Error parsing response: ${error.message}`);
-        return [];
-    }
-}
-
 async function sendToLambda(searchText = '', isSearch = false) {
     try {
         // Get username from storage using a Promise wrapper
@@ -57,15 +34,16 @@ async function sendToLambda(searchText = '', isSearch = false) {
             console.warn('Username not set. Cannot send data to Lambda.');
             return;
         }
+        console.log(`Username retrieved: ${result.username}`);
 
-        const username = result.username;
-
+        // Prepare the data to send to Lambda
         const data = {
-            username: username,
+            username: result.username,
             content: searchText // Send the search text as 'content'
         };
         console.log(`Sending data to Lambda: ${JSON.stringify(data)}`);
 
+        // Send the data to Lambda
         const response = await fetch(LAMBDA_URL, {
             method: 'POST',
             headers: {
@@ -78,24 +56,26 @@ async function sendToLambda(searchText = '', isSearch = false) {
         if (response.status === 200) {
             // Get the response content
             const responseText = await response.text();
-            console.log(`Lambda response: ${responseText}`);
+            // console.log(`Lambda response: ${responseText}`);
 
             // Parse the response
             const formattedResponse = parseResponseText(responseText);
-            console.log(`Formatted Lambda response: ${formattedResponse}`);
+            // console.log(`Formatted Lambda response: ${formattedResponse}`);
 
+            // If it's a search request, send the results back to response.js
+            console.log(`isSearch: ${isSearch} | formattedResponse.length: ${formattedResponse.length}`);
             if (isSearch) {
-                // Send the search results back to response.js
                 chrome.runtime.sendMessage({
                     type: 'SEARCH_RESULTS',
                     results: formattedResponse
                 });
-            } else if (formattedResponse.length > 0) {
-                // Store the initial notifications
+            } 
+            else if (formattedResponse.length > 0) {
                 chrome.storage.local.set({notification: formattedResponse});
                 showNotificationBadge();
             }
-        } else {
+        } 
+        else {
             const errorText = await response.text();
             console.error(`Lambda request failed with status ${response.status}: ${errorText}`);
             if (isSearch) {
@@ -114,6 +94,29 @@ async function sendToLambda(searchText = '', isSearch = false) {
                 error: `Error during search: ${error.message}`
             });
         }
+    }
+}
+function parseResponseText(responseText) {
+    try {
+        const responseObj = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
+
+        if (responseObj.results && responseObj.results.length > 0) {
+            const formattedResults = responseObj.results.map(result => ({
+                image_key: result.image_key,
+                image_text: result.image_text,
+                image_presigned_url: result.image_presigned_url,
+                timestamp_str: result.timestamp_str
+            }));
+
+            console.log(`Found ${formattedResults.length} results`);
+            return formattedResults;
+        } else {
+            console.log('No results found in response');
+            return [];
+        }
+    } catch (error) {
+        console.error(`Error parsing response: ${error.message}`);
+        return [];
     }
 }
 
