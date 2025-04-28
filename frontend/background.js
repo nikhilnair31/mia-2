@@ -24,22 +24,28 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     }
 });
 
-async function sendToLambda(searchText = '', isSearch = false) {
+async function getUsername() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['username'], function(result) {
+            if (result.username) {
+                resolve(result.username);
+            } else {
+                resolve(null);
+            }
+        });
+    });
+}
+
+async function sendToLambda(content = '', isSearch = false) {
     try {
         // Get username from storage using a Promise wrapper
-        const result = await new Promise((resolve) => {
-            chrome.storage.local.get(['username'], resolve);
-        });
-        if (!result.username) {
-            console.warn('Username not set. Cannot send data to Lambda.');
-            return;
-        }
-        console.log(`Username retrieved: ${result.username}`);
+        const username = await getUsername();
+        console.log(`username: ${username}`);
 
         // Prepare the data to send to Lambda
         const data = {
-            username: result.username,
-            content: searchText // Send the search text as 'content'
+            username: username,
+            searchText: content // Send the search text as 'content'
         };
         console.log(`Sending data to Lambda: ${JSON.stringify(data)}`);
 
@@ -71,7 +77,7 @@ async function sendToLambda(searchText = '', isSearch = false) {
                 });
             } 
             else if (formattedResponse.length > 0) {
-                chrome.storage.local.set({notification: formattedResponse});
+                chrome.storage.local.set({notification: formattedResponse, searchText: content});
                 showNotificationBadge();
             }
         } 

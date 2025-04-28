@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const responseContent = document.getElementById('responseContent');
     
-    // Event listener for the search input
     searchInput.addEventListener('input', searchDisplay);
 
     // Listen for messages from background.js with search results
@@ -18,7 +17,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initially load the notifications when the page loads
     chrome.storage.local.get(['notification'], function(result) {
+        // Clear the badge text when the popup is opened
         chrome.action.setBadgeText({text: ''});
+        
+        // Check if there's a search text stored in local storage and set it in the input field
+        getSearchText().then(searchText => {
+            searchInput.value = searchText ? searchText : '';
+        });
+
+        // Check if there are any notifications to display
         if (result.notification) {
             displayResponses(result.notification);
         } 
@@ -37,6 +44,18 @@ document.addEventListener('DOMContentLoaded', function() {
             userIcon.textContent = 'U';
         }
     });
+    
+    async function getSearchText() {
+        return new Promise((resolve) => {
+            chrome.storage.local.get(['searchText'], function(result) {
+                if (result.searchText) {
+                    resolve(result.searchText);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
 
     function displayResponses(responses) {
         responseContent.innerHTML = ''; // Clear existing content

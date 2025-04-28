@@ -18,6 +18,6 @@ function handleInput(event) {
                 query: inputText,
                 search: false
             });
-        }, 500);
+        }, 1000);
     }
 }
