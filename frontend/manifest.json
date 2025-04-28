@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Text Tracker",
+    "name": "MIA",
     "version": "1.0",
-    "description": "Tracks text input and communicates with Lambda",
+    "description": "Search through your saved data!",
     "action": {
         "default_popup": "popup.html",
         "default_icon": {

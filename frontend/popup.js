@@ -24,6 +24,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('viewResponses').addEventListener('click', function() {
         window.open('response.html', '_blank');
     });
+
+    document.getElementById('captureAndUpload').addEventListener('click', function() {
+        chrome.tabs.captureVisibleTab(null, {format: 'jpeg'}, function(dataUrl) {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError);
+                return;
+            }
+            console.log("Captured screenshot");
+
+            uploadToS3(dataUrl);
+        });
+    });
     
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         const url = new URL(tabs[0].url);
@@ -54,3 +66,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Upload to S3
+function uploadToS3(dataUrl) {
+    // Convert the dataURL to a Blob
+    fetch(dataUrl)
+    .then(res => res.blob())
+    .then(blob => {
+        const file = new File([blob], `screenshot_${Date.now()}.jpeg`, { type: 'image/jpeg' });
+        console.log(`File created: ${file.name} and size: ${file.size}`);
+    });
+}
