@@ -24,6 +24,36 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     }
 });
 
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    if (changeInfo.status === 'complete' && tab.active) {
+        const url = new URL(tab.url);
+        const hostname = url.hostname;
+
+        // Handle common search engines
+        if (hostname.includes('google.') && url.pathname === '/search') {
+            const query = new URLSearchParams(url.search).get('q');
+            if (query) {
+                console.log(`Captured Google search: ${query}`);
+                handleCapturedSearch(query);
+            }
+        }
+        else if (hostname.includes('bing.com') && url.pathname === '/search') {
+            const query = new URLSearchParams(url.search).get('q');
+            if (query) {
+                console.log(`Captured Bing search: ${query}`);
+                handleCapturedSearch(query);
+            }
+        }
+        else if (hostname.includes('duckduckgo.com')) {
+            const query = new URLSearchParams(url.search).get('q');
+            if (query) {
+                console.log(`Captured DuckDuckGo search: ${query}`);
+                handleCapturedSearch(query);
+            }
+        }
+    }
+});
+
 async function getUsername() {
     return new Promise((resolve) => {
         chrome.storage.local.get(['username'], function(result) {
@@ -141,4 +171,12 @@ function showNotificationBadge() {
 }
 function clearNotificationBadge() {
     chrome.action.setBadgeText({text: ''});
+}
+
+function handleCapturedSearch(query) {
+    chrome.runtime.sendMessage({
+        type: 'SEARCH_REQUEST',
+        query: query,
+        search: false
+    });
 }
