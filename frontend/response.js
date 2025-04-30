@@ -59,31 +59,87 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function displayResponses(responses) {
         responseContent.innerHTML = ''; // Clear existing content
-        if (Array.isArray(responses) && responses.length > 0) {
-            responses.forEach(item => {
-                const gridItem = document.createElement('div');
-                gridItem.className = 'grid-item';
     
-                if (item.image_presigned_url) {
-                    const img = document.createElement('img');
-                    img.src = item.image_presigned_url;
-                    img.onerror = function() {
-                        this.outerHTML = `<div class="broken-image">Image not available</div>`;
-                    };
-                    gridItem.appendChild(img);
-                } else {
-                    const brokenImage = document.createElement('div');
-                    brokenImage.className = 'broken-image';
-                    brokenImage.textContent = 'No image available';
-                    gridItem.appendChild(brokenImage);
-                }
+        if (!Array.isArray(responses) || responses.length === 0) {
+            responseContent.innerHTML = '<p class="no-responses">No results found.</p>';
+            return;
+        }
     
-                if (item.timestamp_str) {
-                    const timestamp = document.createElement('div');
-                    timestamp.className = 'timestamp';
-                    timestamp.textContent = item.timestamp_str;
-                    gridItem.appendChild(timestamp);
-                }
+        let imagesLoaded = 0;
+        const total = responses.filter(item => item.image_presigned_url).length;
+    
+        const checkAllLoaded = () => {
+            if (imagesLoaded >= total) {
+                document.querySelectorAll('.grid-item').forEach(item => {
+                    item.style.opacity = '1';
+                });
+            }
+        };
+    
+        responses.forEach(item => {
+            const gridItem = document.createElement('div');
+            gridItem.className = 'grid-item';
+    
+            const shimmer = document.createElement('div');
+            shimmer.className = 'shimmer-wrapper';
+            shimmer.innerHTML = `<div class="shimmer"></div>`;
+            gridItem.appendChild(shimmer);
+    
+            if (item.image_presigned_url) {
+                const img = new Image();
+                img.src = item.image_presigned_url;
+                
+                img.onload = function () {
+                    shimmer.remove();
+                    img.style.opacity = '0'; // Start transparent
+                    gridItem.insertBefore(img, gridItem.firstChild);
+                
+                    // Force a reflow to ensure transition applies
+                    void img.offsetWidth;
+                    img.style.opacity = '1'; // Fade in
+                
+                    imagesLoaded++;
+                    checkAllLoaded();
+                
+                    // Show timestamp only if image is successfully loaded
+                    if (item.timestamp_str) {
+                        const timestamp = document.createElement('div');
+                        timestamp.className = 'timestamp';
+                        timestamp.textContent = item.timestamp_str;
+                        gridItem.appendChild(timestamp);
+                    }
+                
+                    if (item.image_text) {
+                        const analysisText = document.createElement('div');
+                        analysisText.className = 'analysis-text';
+                        analysisText.textContent = item.image_text;
+                        gridItem.appendChild(analysisText);
+                    }
+                };
+    
+                img.onerror = function () {
+                    shimmer.remove();
+                    const broken = document.createElement('div');
+                    broken.className = 'broken-image';
+                    broken.textContent = 'Image not available';
+                    gridItem.appendChild(broken);
+    
+                    if (item.image_text) {
+                        const analysisText = document.createElement('div');
+                        analysisText.className = 'analysis-text';
+                        analysisText.textContent = item.image_text;
+                        gridItem.appendChild(analysisText);
+                    }
+    
+                    imagesLoaded++;
+                    checkAllLoaded();
+                };
+            } else {
+                shimmer.remove();
+                const broken = document.createElement('div');
+                broken.className = 'broken-image';
+                broken.textContent = 'No image available';
+                gridItem.appendChild(broken);
     
                 if (item.image_text) {
                     const analysisText = document.createElement('div');
@@ -91,26 +147,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     analysisText.textContent = item.image_text;
                     gridItem.appendChild(analysisText);
                 }
+            }
     
-                if (true) {
-                    const deleteButton = document.createElement('button');
-                    deleteButton.className = 'delete-button';
-                    deleteButton.innerHTML = '&times;'; // × symbol
-                    deleteButton.title = 'Delete item';
-                    deleteButton.onclick = function(e) {
-                        e.stopPropagation(); // Prevent triggering other click events
-                        deleteItem(item.image_key);
-                    };
-                    gridItem.appendChild(deleteButton);
-                }
-    
-                responseContent.appendChild(gridItem);
-            });
-        } 
-        else {
-            responseContent.innerHTML = '<p class="no-responses">No results found.</p>';
-        }
-    }
+            responseContent.appendChild(gridItem);
+        });
+    }       
     
     function searchDisplay() {
         clearTimeout(searchDebounceTimer);
@@ -127,24 +168,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300); // Debounce for 300ms
     }
     function searchResponses(query) {
-        responseContent.innerHTML = '<p class="no-responses">Searching...</p>';
+        responseContent.innerHTML = '';
+    
+        // Show shimmer placeholders (e.g. 6 grid shimmer items)
+        for (let i = 0; i < 6; i++) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'grid-item';
+    
+            const shimmer = document.createElement('div');
+            shimmer.className = 'shimmer-wrapper';
+            shimmer.innerHTML = `<div class="shimmer"></div>`;
+            placeholder.appendChild(shimmer);
+    
+            responseContent.appendChild(placeholder);
+        }
+    
         chrome.runtime.sendMessage({
             type: 'SEARCH_REQUEST',
             query: query,
             search: true
         });
-    }
-
-    function deleteItem(id) {
-        console.log('Can delete item with ID:', id);
-        if (confirm('Are you sure you want to delete this item?')) {
-            console.log('Deleting item with ID:', id);
-            // Here you would normally make an API call to delete the item
-            // Then refresh the display
-            
-            // For demo purposes, we'll filter out the deleted item
-            // const updatedItems = sampleItems.filter(item => item.id !== id);
-            // createGridItems(updatedItems);
-        }
     }
 });

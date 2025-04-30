@@ -112,6 +112,9 @@
             width: 100%;
             height: auto;
             display: block;
+            border-radius: 16px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
         }
         .grid-item .timestamp {
             position: absolute;
@@ -134,9 +137,6 @@
         .grid-item:hover .analysis-text {
             transform: translateY(0);
         }
-        .grid-item:hover .delete-button {
-            opacity: 1;
-        }
 
         .broken-image {
             width: 100%;
@@ -150,7 +150,7 @@
 
         .analysis-text {
             position: absolute;
-            bottom: 0;
+            bottom: -1px;
             left: 0;
             right: 0;
             background-color: rgba(0,0,0,0.8);
@@ -169,27 +169,29 @@
             padding: 20px;
         }
 
-        .delete-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgb(255 146 178);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-size: 16px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 2;
+        .shimmer-wrapper {
+            position: relative;
+            overflow: hidden;
+            background-color: #e0e0e0;
+            border-radius: 16px;
+            aspect-ratio: 1/1;
         }
-        .delete-button:hover {
-            background-color: rgb(255, 92, 116);
+
+        .shimmer {
+            height: 100%;
+            width: 100%;
+            animation: shimmer 1.5s infinite;
+            background: linear-gradient(to right, #e0e0e0 0%, #f5f5f5 50%, #e0e0e0 100%);
+            background-size: 200% 100%;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
         }
     </style>
 </head>

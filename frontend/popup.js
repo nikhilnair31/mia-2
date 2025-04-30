@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.open('response.html', '_blank');
     });
 
-    document.getElementById('captureAndUpload').addEventListener('click', function() {
+    document.getElementById('saveScreen').addEventListener('click', function() {
         chrome.tabs.captureVisibleTab(null, {format: 'jpeg'}, function(dataUrl) {
             if (chrome.runtime.lastError) {
                 console.error(chrome.runtime.lastError);
