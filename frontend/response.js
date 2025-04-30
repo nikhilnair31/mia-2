@@ -2,8 +2,35 @@ document.addEventListener('DOMContentLoaded', function() {
     let searchDebounceTimer;
     const searchInput = document.getElementById('searchInput');
     const responseContent = document.getElementById('responseContent');
+    const userIcon = document.getElementById('userIcon');
+    const userMenu = document.getElementById('userMenu');
+    const usernameInput = document.getElementById('usernameInput');
+    const saveUserBtn = document.getElementById('saveUserBtn');
+    const status = document.getElementById('status');
     
     searchInput.addEventListener('input', searchDisplay);
+    
+    userIcon.addEventListener('click', () => {
+        const isMenuVisible = userMenu.style.display !== 'flex';
+        userMenu.style.display = isMenuVisible ? 'flex' : 'none';
+        status.style.display = 'none';
+    });
+
+    saveUserBtn.addEventListener('click', () => {
+        const newUsername = usernameInput.value.trim();
+        if (newUsername) {
+            chrome.storage.local.set({ username: newUsername }, () => {
+                userIcon.textContent = newUsername.charAt(0).toUpperCase();
+
+                status.textContent = 'Username saved!';
+                status.style.display = 'flex';
+                setTimeout(() => {
+                    status.textContent = '';
+                    status.style.display = 'none';
+                }, 2000);
+            });
+        }
+    });
 
     // Listen for messages from background.js with search results
     chrome.runtime.onMessage.addListener(function(message) {
@@ -35,10 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Load the username when the page loads
-    const userIcon = document.getElementById('userIcon');
     chrome.storage.local.get(['username'], function(result) {
         if (result.username) {
             userIcon.textContent = result.username.charAt(0).toUpperCase();
+            usernameInput.value = result.username;
         } 
         else {
             userIcon.textContent = 'U';

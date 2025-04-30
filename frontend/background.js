@@ -5,15 +5,13 @@ let notificationTimer;
 chrome.action.onClicked.addListener(() => {
     clearNotificationBadge();
 
-    if (badgeText === '!') {
-        // If there was a notification badge, open the response page
-        chrome.tabs.create({ url: 'response.html' });
-    }
-    else {
-        // Otherwise, open the normal popup
-        // Note: This won't actually do anything since the popup is defined in manifest.json
-        // The popup will open automatically on click if there's no notification
-    }
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        const currentTab = tabs[0];
+        chrome.tabs.create({
+            url: 'response.html',
+            index: currentTab.index + 1
+        });
+    });
 });
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {

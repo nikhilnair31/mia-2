@@ -193,6 +193,52 @@
                 background-position: 200% 0;
             }
         }
+
+        .user-menu {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            padding: 10px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 250px;
+            width: calc(100vw - 40px); /* ensures padding on mobile */
+            box-sizing: border-box;
+        }
+        .user-menu input {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .user-menu button {
+            background-color: #5e548e;
+            color: white;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .user-menu input, .user-menu button {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .user-menu button:hover {
+            background-color: #231942;
+        }
+
+        #status {
+            font-size: 13px;
+            text-align: center;
+            min-height: 20px;
+            color: #5e548e; /* match accent */
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -203,6 +249,11 @@
             </div>
         </div>
         <div id="userIcon" class="user-icon">N</div>
+        <div id="userMenu" class="user-menu" style="display: none;">
+            <input type="text" id="usernameInput" placeholder="Update username">
+            <button id="saveUserBtn">Save</button>
+            <div id="status">Saved!</div>
+        </div>        
     </div>
 
     <div id="responseContent" class="masonry-grid">
