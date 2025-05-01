@@ -3,7 +3,7 @@ const LAMBDA_URL = 'https://rxirv3zxmn4woy6hztdqrmfigy0lsurc.lambda-url.ap-south
 let notificationTimer;
 
 chrome.action.onClicked.addListener(() => {
-    chrome.action.setBadgeText({text: ''});
+    clearNotificationBadge();
 
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
         const currentTab = tabs[0];
@@ -166,6 +166,9 @@ function showNotificationBadge() {
 
     // Set a new timer to clear the badge after X seconds
     notificationTimer = setTimeout(clearNotificationBadge, 15000);
+}
+function clearNotificationBadge() {
+    chrome.action.setBadgeText({text: ''});
 }
 
 function handleCapturedSearch(query) {
