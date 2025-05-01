@@ -3,10 +3,24 @@
 <head>
     <title>MIA</title>
     <style>
+        :root {
+            --accent-0: #d7fc70;
+            --accent-1: #7654b1;
+            --accent-2: #8e6dc6;
+            --base-0: #1e1c2c;
+            --base-1: #1e1b2e;
+            --base-2: #343243;
+            --base-3: #221f31;
+            --shadow-0: #0000001a;
+            --shadow-1: #0000004d;
+            --text-0: #999;
+            --white: #FFFFFF;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            background: linear-gradient(to bottom, #1e1c2c, #1e1b2e);
+            background: linear-gradient(to bottom, var(--base-0), var(--base-1));
             padding-top: 60px;
         }
 
@@ -14,23 +28,20 @@
             padding: 15px 20px;
             display: flex;
             align-items: center;
-            position: fixed; /* Add this to make it float */
-            top: 0; /* Position at the top */
-            left: 0; /* Align to the left edge */
-            width: 100%; /* Take full width */
-            z-index: 1000; /* Ensure it stays above other elements */
-            /* background: linear-gradient(to bottom, rgb(240 240 240), rgb(240 240 240 / 0%)); */
-            /* backdrop-filter: blur(0px); */
-            -webkit-backdrop-filter: blur(8px);
+            position: fixed;
+            top: 0;
+            left: 0;
+            gap: 10px;
+            width: 100%;
+            z-index: 1000;
             box-sizing: border-box;
-            gap: 10px; /* Space between elements */
             justify-content: space-between;
         }
         .search-container {
             flex-grow: 1;
             display: flex;
             align-items: center;
-            max-width: calc(100% - 50px); /* Account for user icon + refresh button width + margins */
+            max-width: calc(100% - 50px);
         }
         .search-wrapper {
             position: relative;
@@ -40,47 +51,30 @@
             width: 100%;
             padding: 10px 15px;
             border: none;
-            border-radius: 12px;
-            color: #d7fc70;
-            background-color: #7654b1;
+            border-radius: 0px;
+            color: var(--accent-1);
+            background-color: var(--accent-0);
+            font-weight: bold;
             font-size: 16px;
             outline: none;
+            text-transform: uppercase;
             box-sizing: border-box;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 5px var(--shadow-0);
             transition: box-shadow 0.3s ease;
         }
         #searchInput::placeholder {
-            color: #999;
+            color: var(--text-0);
         }
         #searchInput:hover {
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .button {
-            background-color: #e0e0e0;
-            border: none;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            color: #666;
-            font-size: 16px;
-            transition: background-color 0.3s;
-            flex-shrink: 0;
-        }
-        .button:hover {
-            background-color: #d0d0d0;
+            box-shadow: 0 16px 32px var(--shadow-1);
         }
 
         .user-icon {
-            background-color: #343243;
-            color: #7b7889;
-            width: 36px;
-            height: 36px;
-            border-radius: 12px;
+            background-color: var(--accent-1);
+            color: var(--accent-0);
+            width: 100px;
+            height: 38px;
+            border-radius: 0px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -88,11 +82,12 @@
             font-weight: bold;
             cursor: pointer;
             flex-shrink: 0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-transform: uppercase;
+            box-shadow: 0 2px 5px var(--shadow-0);
             transition: box-shadow 0.3s ease;
         }
         .user-icon:hover {
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 16px 32px var(--shadow-1);
         }
 
         .masonry-grid {
@@ -103,12 +98,12 @@
             padding: 20px;
         }
         .masonry-grid:hover .grid-item:hover {
-            opacity: 1; /* Ensure the hovered item is fully visible */
+            opacity: 1;
         }
 
         .grid-item {
             position: relative;
-            border-radius: 18px;
+            border-radius: 0px;
             overflow: hidden;
             opacity: 0.7;
             transition: box-shadow 0.3s ease, transform 0.3s ease;
@@ -118,7 +113,7 @@
             width: 100%;
             height: auto;
             display: block;
-            border-radius: 16px;
+            border-radius: 0px;
             opacity: 0;
             transition: opacity 0.5s ease-in;
         }
@@ -126,21 +121,22 @@
             display: none;
         }
         .grid-item:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
+            transform: scale(1.05);
+            box-shadow: 0 16px 32px var(--shadow-1);
         }  
         .grid-item:hover .timestamp {
             opacity: 1;
         }
 
-        .broken-image {
+        .broken-image { 
             width: 100%;
             aspect-ratio: 1/1;
-            background-color: #221f31;
+            background-color: var(--base-3);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #7b7889;
+            text-transform: uppercase;
+            color: var(--text-0);
         }
 
         .analysis-text {
@@ -158,7 +154,7 @@
         }
 
         .no-responses {
-            color: #666;
+            color: var(--text-0);
             font-style: italic;
             text-align: center;
             padding: 20px;
@@ -171,15 +167,15 @@
         .shimmer-wrapper {
             position: relative;
             overflow: hidden;
-            background-color: #221f31;
-            border-radius: 16px;
+            background-color: var(--base-3);
+            border-radius: 0px;
             aspect-ratio: 1/1;
         }
         .shimmer {
             height: 100%;
             width: 100%;
             animation: shimmer 1.5s infinite;
-            background: linear-gradient(to right, #221f31 0%, #2f2b43 50%, #221f31 100%);
+            background: linear-gradient(to right, var(--base-1) 0%, var(--base-2) 50%, var(--base-1) 100%);
             background-size: 200% 100%;
         }
         @keyframes shimmer {
@@ -195,32 +191,24 @@
             position: absolute;
             top: 60px;
             right: 10px;
-            background-color: #1e1b2e;
+            background-color: var(--base-1);
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 10px var(--shadow-0);
             padding: 10px;
             z-index: 1001;
-            display: flex;
+            /* display: flex; */
             flex-direction: column;
             gap: 10px;
-            max-width: 250px;
-            width: calc(100vw - 40px);
-            box-sizing: border-box;
-        }
-        .user-menu input {
-            padding: 8px;
-            font-size: 14px;
-            border: 0px solid #ccc;
-            color: #7b7889;
-            background-color: #343243;
-            border-radius: 8px;
+            max-width: 100px;
+            /* width: calc(100vw - 40px);
+            box-sizing: border-box; */
         }
         .user-menu button {
-            background-color: #7654b1;
+            background-color: var(--accent-1);
             color: white;
             padding: 8px;
             border: none;
-            border-radius: 8px;
+            border-radius: 0px;
             cursor: pointer;
         }
         .user-menu input, .user-menu button {
@@ -228,14 +216,13 @@
             box-sizing: border-box;
         }
         .user-menu button:hover {
-            background-color: #8f6dcb;
+            background-color: var(--accent-2);
         }
-
         #status {
             font-size: 13px;
             text-align: center;
             min-height: 20px;
-            color: #d7fc70; /* match accent */
+            color: var(--accent-0);
             display: none;
         }
     </style>
@@ -250,8 +237,8 @@
         <div id="userIcon" class="user-icon">N</div>
         <div id="userMenu" class="user-menu" style="display: none;">
             <input type="text" id="usernameInput" placeholder="Update username">
-            <button id="saveUserBtn">Save</button>
-            <div id="status">Saved!</div>
+            <button id="saveUserBtn">save</button>
+            <div id="status">saved!</div>
         </div>        
     </div>
 

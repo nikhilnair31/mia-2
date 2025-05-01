@@ -17,7 +17,9 @@ function handleInput(event) {
     console.log(`handleInput`);
     
     const target = event.target;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || event.target.getAttribute('contenteditable') === 'true' || target.isContentEditable) {
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.getAttribute('contenteditable') === 'true' || target.isContentEditable) {
+        console.log(`target: ${JSON.stringify(target)}`);
+        
         clearTimeout(debounceTimer);
         
         debounceTimer = setTimeout(() => {

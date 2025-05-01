@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
         responseContent.innerHTML = '';
     
         // Show shimmer placeholders (e.g. 6 grid shimmer items)
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 12; i++) {
             const placeholder = document.createElement('div');
             placeholder.className = 'grid-item';
     
