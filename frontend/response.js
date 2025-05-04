@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     let searchDebounceTimer;
+
     const searchInput = document.getElementById('searchInput');
     const responseContent = document.getElementById('responseContent');
     const userIcon = document.getElementById('userIcon');
@@ -7,8 +8,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const usernameInput = document.getElementById('usernameInput');
     const saveUserBtn = document.getElementById('saveUserBtn');
     const status = document.getElementById('status');
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const closeModal = document.getElementById('closeModal');
     
     searchInput.addEventListener('input', searchDisplay);
+
+    closeModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+        modalImage.src = '';
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            modalImage.src = '';
+        }
+    });
     
     userIcon.addEventListener('click', () => {
         const isMenuVisible = userMenu.style.display !== 'flex';
@@ -32,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Listen for messages from background.js with search results
     chrome.runtime.onMessage.addListener(function(message) {
         if (message.type === 'SEARCH_RESULTS') {
             displayResponses(message.results);
@@ -42,7 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initially load the notifications when the page loads
     chrome.storage.local.get(['notification'], function(result) {
         // Clear the badge text when the popup is opened
         chrome.action.setBadgeText({text: ''});
@@ -61,7 +75,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Load the username when the page loads
     chrome.storage.local.get(['username'], function(result) {
         if (result.username) {
             userIcon.textContent = result.username.charAt(0).toUpperCase();
@@ -142,6 +155,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         analysisText.textContent = item.image_text;
                         gridItem.appendChild(analysisText);
                     }
+
+                    img.addEventListener('click', () => {
+                        modalImage.src = img.src;
+                        modal.style.display = 'flex';
+                    });
                 };
     
                 img.onerror = function () {

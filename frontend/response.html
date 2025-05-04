@@ -106,7 +106,7 @@
             }
         }
         .masonry-grid {
-            column-count: 5; /* Adjust number based on screen size */
+            column-count: 4; /* Adjust number based on screen size */
             column-gap: 16px;
             padding: 20px;
         }
@@ -241,6 +241,33 @@
             color: var(--accent-0);
             display: none;
         }
+
+        #imageModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 2000;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #imageModal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+        #closeModal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 36px;
+            color: white;
+            cursor: pointer;
+            z-index: 2001;
+        }
     </style>
 </head>
 <body>
@@ -260,6 +287,11 @@
 
     <div id="responseContent" class="masonry-grid">
         <p class="no-responses">Loading responses...</p>
+    </div>
+
+    <div id="imageModal" style="display:none;">
+        <span id="closeModal">&times;</span>
+        <img id="modalImage" />
     </div>
 
     <script src="response.js"></script>
