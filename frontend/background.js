@@ -1,4 +1,4 @@
-const LAMBDA_URL = 'https://rxirv3zxmn4woy6hztdqrmfigy0lsurc.lambda-url.ap-south-1.on.aws/';
+const SERVER_URL = 'http://178.156.133.100:5000/';
 
 let notificationTimer;
 
@@ -18,7 +18,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     console.log(`Message received in background: ${JSON.stringify(message)}`);
 
     if (message.type === 'SEARCH_REQUEST') {
-        sendToLambda(message.query, message.search); // Call Lambda with the search query and indicate it's a search
+        sendToEnpoint(message.query, message.search); // Call Lambda with the search query and indicate it's a search
     }
 });
 
@@ -64,21 +64,23 @@ async function getUsername() {
     });
 }
 
-async function sendToLambda(content = '', isSearch = false) {
+async function sendToEnpoint(content = '', isSearch = false) {
     try {
+        // Create the endpoint URL
+        const endpoint = `${SERVER_URL}/query`;
+
         // Get username from storage using a Promise wrapper
         const username = await getUsername();
-        console.log(`username: ${username}`);
 
         // Prepare the data to send to Lambda
         const data = {
             username: username,
-            searchText: content // Send the search text as 'content'
+            searchText: content
         };
         console.log(`Sending data to Lambda: ${JSON.stringify(data)}`);
 
         // Send the data to Lambda
-        const response = await fetch(LAMBDA_URL, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -138,11 +140,11 @@ function parseResponseText(responseText) {
             const formattedResults = responseObj.results.map(result => ({
                 image_key: result.image_key,
                 image_text: result.image_text,
-                image_presigned_url: result.image_presigned_url,
+                image_presigned_url: `${SERVER_URL}${result.image_presigned_url}`,
                 timestamp_str: result.timestamp_str
             }));
-
-            console.log(`Found ${formattedResults.length} results`);
+            // console.log(`formattedResults\n${JSON.stringify(formattedResults)}`);
+            // console.log(`Found ${formattedResults.length} results`);
             return formattedResults;
         } else {
             console.log('No results found in response');
