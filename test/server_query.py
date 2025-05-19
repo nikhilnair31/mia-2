@@ -1,6 +1,6 @@
 import requests
 
-url = 'http://178.156.133.100:5000/query'
+url = 'https://mia2.xyz//query'
 username = 'nikhil'
 query_text = r'chat'
 

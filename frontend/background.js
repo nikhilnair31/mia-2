@@ -1,4 +1,4 @@
-const SERVER_URL = 'http://178.156.133.100:5000/';
+const SERVER_URL = 'https://mia2.xyz/';
 
 let notificationTimer;
 
@@ -138,12 +138,12 @@ function parseResponseText(responseText) {
 
         if (responseObj.results && responseObj.results.length > 0) {
             const formattedResults = responseObj.results.map(result => ({
-                image_key: result.image_key,
-                image_text: result.image_text,
                 image_presigned_url: `${SERVER_URL}${result.image_presigned_url}`,
+                post_url: result.post_url,
+                image_text: result.image_text,
                 timestamp_str: result.timestamp_str
             }));
-            // console.log(`formattedResults\n${JSON.stringify(formattedResults)}`);
+            console.log(`formattedResults\n${JSON.stringify(formattedResults)}`);
             // console.log(`Found ${formattedResults.length} results`);
             return formattedResults;
         } else {
