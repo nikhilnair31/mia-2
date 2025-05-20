@@ -1,5 +1,9 @@
 data/
 
+token.json
+
+downloaded_images/
+
 aws/
 
 # Byte-compiled / optimized / DLL files
